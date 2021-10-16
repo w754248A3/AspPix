@@ -1,0 +1,15 @@
+﻿@page
+@model AspPix.Pages.ViewImgModel
+@{
+}
+
+
+<div>
+    <img src="@Model.BigUri"/>
+    <div>
+        @foreach (var item in Model.Src)
+        {
+            <span>     </span><a href="@item.uri">@item.tag</a><span>      </span>
+        }
+    </div>
+</div>

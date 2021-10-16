@@ -1,0 +1,90 @@
+﻿@page
+@model AspPix.Pages.IndexModel
+@{
+}
+
+@using AspPix
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, AspPix
+
+<div>
+    <script>
+        (function () {
+            document.addEventListener("DOMContentLoaded", function () {
+
+                let up = document.getElementById("up");
+
+                let down = document.getElementById("down");
+
+                let f = document.getElementById("form");
+
+                let n = document.getElementById("n");
+
+                up.onclick = function () {
+
+                    if (n.value) {
+
+                        let count = Number(n.value);
+
+                        if (count > 0) {
+
+                            n.value = count - 1;
+
+
+                            f.submit();
+                        }
+
+
+                    }
+                };
+
+
+                down.onclick = function () {
+                    if (n.value) {
+
+                        let count = Number(n.value);
+
+                        n.value = count + 1;
+
+                        f.submit();
+
+
+                    }
+                };
+            });       
+        })();
+    </script>
+    <div>
+        <form id="form" method="get">
+            <select name="select">
+                <option value="">All</option>
+                @foreach (var item in Model.Tags)
+                {
+                    if (Model.Select == item)
+                    {
+                <option value="@item" selected>@item</option>
+                    }
+                    else
+                    {
+                <option value="@item">@item</option>
+                    }
+
+                }
+
+            </select>
+            <input type="text" name="tag" value="@Model.Tag" />
+            <input type="number" name="down" id="n" value="@Model.Down" />
+        </form>
+        <button id="up">上一页</button>
+        <button id="down">下一页</button>
+    </div>
+    <div>
+        @foreach (var item in Model.Scrs)
+        {
+        @*<myimg height="540" src="@item.small" />*@
+        <a href="@item.big" target="_blank"><my-img img-uri="@item.small"></my-img></a>
+        }
+    </div>
+    <div>
+    </div>
+</div>

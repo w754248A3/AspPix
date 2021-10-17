@@ -12,15 +12,43 @@
         (function () {
             document.addEventListener("DOMContentLoaded", function () {
 
-                let up = document.getElementById("up");
+                let up = document.getElementsByClassName("up");
 
-                let down = document.getElementById("down");
+                let down = document.getElementsByClassName("down");
 
                 let f = document.getElementById("form");
 
-                let n = document.getElementById("n");
+                let n = document.getElementById("down");
 
-                up.onclick = function () {
+                let tag = document.getElementById("tag");
+
+                let select = document.getElementById("select");
+
+
+                let sel_v = select.value;
+
+                let tag_v = tag.value;
+
+                function add(ie, func) {
+
+                    Array.from(ie, function (v) {
+
+                        v.onclick = func;
+                    });
+                }
+
+                function fuck() {
+
+
+                    if (tag.value !== tag_v || select.value !== sel_v) {
+                        n.value = 0;
+
+                        return;
+                    }
+                }
+
+
+                add(up, function () {
 
                     if (n.value) {
 
@@ -30,33 +58,36 @@
 
                             n.value = count - 1;
 
-
+                            fuck();
                             f.submit();
                         }
 
 
                     }
-                };
+                });
 
 
-                down.onclick = function () {
+                add(down, function () {
                     if (n.value) {
 
                         let count = Number(n.value);
 
                         n.value = count + 1;
 
+                        fuck();
                         f.submit();
 
 
                     }
-                };
-            });       
+                });
+            });
+
+                  
         })();
     </script>
     <div>
         <form id="form" method="get">
-            <select name="select">
+            <select name="select" id="select">
                 <option value="">All</option>
                 @foreach (var item in Model.Tags)
                 {
@@ -72,11 +103,11 @@
                 }
 
             </select>
-            <input type="text" name="tag" value="@Model.Tag" />
-            <input type="number" name="down" id="n" value="@Model.Down" />
+            <input type="text" name="tag" id="tag" value="@Model.Tag" />
+            <input type="number" name="down" id="down" value="@Model.Down" />
         </form>
-        <button id="up">上一页</button>
-        <button id="down">下一页</button>
+        <button class="up">上一页</button>
+        <button class="down">下一页</button>
     </div>
     <div>
         @foreach (var item in Model.Scrs)
@@ -86,5 +117,7 @@
         }
     </div>
     <div>
+        <button class="up">上一页</button>
+        <button class="down">下一页</button>
     </div>
 </div>

@@ -130,10 +130,15 @@ namespace AspPix
                 foreach (var item in cf())
                 {
                     var res = await item.ConfigureAwait(false);
-
+                    
                     if (res.IsSuccessStatusCode)
                     {
+                        
                         return await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                       
                     }
                 }
 
@@ -209,7 +214,7 @@ namespace AspPix
         public static string AsUriFromDateTimeIdSmall(Pixiv2 p, bool other)
         {
             //_ugoira0.jpg
-            ///c/540x540_70/img-master/img/2020/03/30/08/40/00/80446655_p0_master1200.jpg
+           
             static string As(int y, int m, int d, int h, int mi, int se)
             {
                 static string Add(int n)
@@ -245,7 +250,7 @@ namespace AspPix
             string ds = As(d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second);
             ///img-original/img/2015/02/07/19/16/23/48609048_ugoira0.jpg
             ///c/540x540_70/img-master/img/2015/02/07/19/16/23/48609048_master1200.jpg
-
+            ///c/540x540_70/img-master/img/2020/03/30/08/40/00/80446655_p0_master1200.jpg
             if (other)
             {
                 return $"/c/540x540_70/img-master/img/{ds}/{id}_master1200.jpg";
@@ -343,6 +348,8 @@ namespace AspPix
             {
 
                 AutomaticDecompression = DecompressionMethods.All,
+
+                UseProxy = false,
 
                 ConnectCallback = async (info, token) =>
                 {
@@ -463,11 +470,30 @@ namespace AspPix
 
         static string[] GetTagsFromHtml(string s)
         {
-            var t = re_tags.Match(s).Groups[1].Value;
+            var m = re_tags.Match(s);
 
-            using var js = JsonDocument.Parse(t);
+            if (!m.Success)
+            {
+                return new string[] { };
+            }
+            else
+            {
+                var t = m.Groups[1].Value;
 
-            return js.RootElement.EnumerateArray().Select(p => p.GetProperty("tag").GetString()).ToArray();
+                try
+                {
+
+                    using var js = JsonDocument.Parse(t);
+
+                    return js.RootElement.EnumerateArray().Select(p => p.GetProperty("tag").GetString()).ToArray();
+                }
+                catch (JsonException)
+                {
+                    Info.LogLine(t);
+
+                    throw;
+                }
+            }
         }
 
 
@@ -693,6 +719,7 @@ namespace AspPix
             {
                 try
                 {
+                    
                     var response = await http(item.ToString()).ConfigureAwait(false);
 
                     if (response.IsSuccessStatusCode)
@@ -702,6 +729,8 @@ namespace AspPix
                         var mark = GetMarkFromHtml(s);
 
                         var tags = GetTagsFromHtml(s);
+
+                        //Console.WriteLine(string.Join(' ', tags));
 
                         DateTime d;
                         byte b;
@@ -738,7 +767,7 @@ namespace AspPix
 
             var n = GetOffsetId(func);
 
-
+          
             Task.Run(() => Catch(() => CalingHtml(chn, n)));
 
             var th = new Thread(() => WriteDB(func, chn));

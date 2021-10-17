@@ -27,46 +27,72 @@ namespace AspPix.Pages
 
         public string Tag { get; set; }
         
-        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, int tagid)
+        static IQueryable<Pixiv2> CreateExQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
         {
-
-            return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId)
-              .InnerJoin(db.GetTable<Pixiv2>(), (left, right) => left == right.Id, (left, right) => right);
+            return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid)
+              .RightJoin(query, (left, right) => left.ItemId == right.Id, (left, right) => new { left, right })
+              .Where(p => p.left == null)
+              .Select(p => p.right);
         }
 
-        public async Task OnGetAsync(string select, string tag, uint? down)
+        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
+        {
+            return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId)
+              .InnerJoin(query, (left, right) => left == right.Id, (left, right) => right);
+        }
+
+        public async Task OnGetAsync(string select, string tag, uint down)
         {
             Tags = Info.Tags;
 
-            Down = down ?? 0;
+            Down = down;
 
-            Select = select ?? "";
-
-            Tag = tag ?? "";
-
-
-            if (Select != Tag) 
+            string t;
+            if (string.IsNullOrWhiteSpace(tag))
             {
-                Tag = Select;
+                if (string.IsNullOrWhiteSpace(select))
+                {
+                    Select = "";
 
-                Down = 0;
+                    Tag = "";
+
+                    t = "";
+                }
+                else
+                {
+                    Select = select;
+
+                    Tag = "";
+
+                    t = Select;
+                }
             }
-            
+            else
+            {
+                Select = tag;
+
+                Tag = tag;
+
+
+                t = tag;
+            }
+
+         
+
             using var db = Info.DbCreateFunc();
 
 
-            IQueryable<Pixiv2> query;
+            IQueryable<Pixiv2> query = db.GetTable<Pixiv2>();
 
-            if (string.IsNullOrWhiteSpace(Select))
+            if (string.IsNullOrWhiteSpace(t))
             {
-                query = db.GetTable<Pixiv2>()
-                    .OrderByDescending(item => item.Mark);
+               
             }
             else
             {
 
 
-                var tagid = db.GetTable<PixivTag>().Where(p => p.Tag == Select).FirstOrDefault();
+                var tagid = db.GetTable<PixivTag>().Where(p => p.Tag == t).FirstOrDefault();
 
                 if (tagid is null)
                 {
@@ -74,19 +100,14 @@ namespace AspPix.Pages
                 }
                 else
                 {
-                    if (!Tags.Any(p => p == Select))
-                    {
-                        Tags = Tags.Append(Select);
-                    }
-
-                    query = CreateQuery(db, tagid.Id)
-                        .OrderByDescending(item => item.Mark);
+                    query = CreateQuery(db, query, tagid.Id);
+                     
                 }       
             }
-           
 
 
             var items = await query
+                .OrderByDescending(item => item.Mark)
                 .Skip((int)(Down * ConstValue.TAKE_SMALL_IMAGE))
                 .Take(ConstValue.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();

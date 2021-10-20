@@ -347,7 +347,27 @@ namespace AspPix
             var handler = new SocketsHttpHandler()
             {
 
+                ConnectTimeout = new TimeSpan(0, 0, 5),
+
+                KeepAlivePingTimeout = new TimeSpan(0, 0, 5),
+
+                KeepAlivePingDelay = new TimeSpan(0, 0, 5),
+
+                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+
+                ResponseDrainTimeout = new TimeSpan(0, 0, 5),
+
+                //PooledConnectionIdleTimeout = new TimeSpan(0,0,5),
+
+                PooledConnectionLifetime = new TimeSpan(0, 1, 0),
+
                 AutomaticDecompression = DecompressionMethods.All,
+
+                EnableMultipleHttp2Connections = true,
+
+                MaxConnectionsPerServer = 6,
+
+
 
                 UseProxy = false,
 
@@ -509,7 +529,7 @@ namespace AspPix
         }
 
 
-        static Func<string, int> CreateGetHashCode()
+        public static Func<string, int> CreateGetHashCode()
         {
             byte[] input = new byte[2048];
 
@@ -524,6 +544,8 @@ namespace AspPix
                 return BitConverter.ToInt32(output);
             };
         }
+
+        public static string Message { get; set; }
 
         static void WriteDB2(Func<DataConnection> func, ChannelReader<(int id, int mark, string[] tags, DateTime d, byte b)> reader)
         {
@@ -635,7 +657,7 @@ namespace AspPix
                 Array.ForEach(item.tags, p => dic[p] = hash(p));
             }
 
-            Info.LogLine("开始写入数据库");
+            Message = "开始写入数据库";
 
             var map = id_tags_s.Select(item => item.Item2.Select(p => new PixivTagHas { ItemId = item.Item1, TagId = dic[p] }));
 
@@ -652,7 +674,7 @@ namespace AspPix
             db.InsertOrReplace(new PixivOffset { Index = 0, Offset = pixs.Last().Id + 1 });
 
 
-            Info.LogLine($"写入数据库完成{pixs.Last().Id}");
+            Message = $"写入数据库完成{pixs.Last().Id}";
         }
 
         static bool IsE(Exception e, Type type)
@@ -707,6 +729,8 @@ namespace AspPix
             }
         }
 
+        public static string HTTPMEssage { get; set; }
+
         static async Task CalingHtml(ChannelWriter<(int id, int mark, string[] tags, DateTime d, byte b)> writer, int n)
         {
 
@@ -719,8 +743,12 @@ namespace AspPix
             {
                 try
                 {
-                    
+
+                    HTTPMEssage = $"开始爬取 {item}";
+
                     var response = await http(item.ToString()).ConfigureAwait(false);
+
+                    HTTPMEssage = $"获取HTML {item}";
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -742,6 +770,8 @@ namespace AspPix
 
                         //Console.WriteLine(item);
                     }
+
+                    HTTPMEssage = $"完成一个 {item}";
                 }
                 catch (TaskCanceledException)
                 {
@@ -752,6 +782,19 @@ namespace AspPix
 
                 }
             }
+        }
+
+        static async Task MessageLog()
+        {
+            while (true)
+            {
+                await Task.Delay(new TimeSpan(0, 0, 15)).ConfigureAwait(false);
+
+                Info.LogLine($"{Message} {HTTPMEssage}");
+
+            }
+
+
         }
 
         public static void Start(Func<DataConnection> func)
@@ -767,7 +810,8 @@ namespace AspPix
 
             var n = GetOffsetId(func);
 
-          
+            Task.Run(() => MessageLog());
+
             Task.Run(() => Catch(() => CalingHtml(chn, n)));
 
             var th = new Thread(() => WriteDB(func, chn));

@@ -35,10 +35,13 @@ namespace AspPix.Pages
               .Select(p => p.right);
         }
 
-        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
+        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, int tagid)
         {
-            return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId)
-              .InnerJoin(query, (left, right) => left == right.Id, (left, right) => right);
+            var has = db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
+
+            var pix = db.GetTable<Pixiv2>();
+
+            return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
         public async Task OnGetAsync(string select, string tag, uint down)
@@ -82,27 +85,18 @@ namespace AspPix.Pages
             using var db = Info.DbCreateFunc();
 
 
-            IQueryable<Pixiv2> query = db.GetTable<Pixiv2>();
+            IQueryable<Pixiv2> query;
 
             if (string.IsNullOrWhiteSpace(t))
             {
-               
+                query = db.GetTable<Pixiv2>();
             }
             else
             {
+                var id = PixCaling.CreateGetHashCode()(t);
 
+                query = CreateQuery(db, id);
 
-                var tagid = db.GetTable<PixivTag>().Where(p => p.Tag == t).FirstOrDefault();
-
-                if (tagid is null)
-                {
-                    throw new ArgumentException();
-                }
-                else
-                {
-                    query = CreateQuery(db, query, tagid.Id);
-                     
-                }       
             }
 
 

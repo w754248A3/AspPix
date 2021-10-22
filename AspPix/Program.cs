@@ -349,17 +349,17 @@ namespace AspPix
 
                 ConnectTimeout = new TimeSpan(0, 0, 5),
 
-                KeepAlivePingTimeout = new TimeSpan(0, 0, 5),
+                //KeepAlivePingTimeout = new TimeSpan(0, 0, 5),
 
-                KeepAlivePingDelay = new TimeSpan(0, 0, 5),
+                //KeepAlivePingDelay = new TimeSpan(0, 0, 5),
 
-                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+                //KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
 
                 ResponseDrainTimeout = new TimeSpan(0, 0, 5),
 
                 //PooledConnectionIdleTimeout = new TimeSpan(0,0,5),
 
-                PooledConnectionLifetime = new TimeSpan(0, 1, 0),
+                PooledConnectionLifetime = new TimeSpan(0, 0, 15),
 
                 AutomaticDecompression = DecompressionMethods.All,
 
@@ -671,7 +671,7 @@ namespace AspPix
             WritePixiv2(db, pixs);
 
 
-            db.InsertOrReplace(new PixivOffset { Index = 0, Offset = pixs.Last().Id + 1 });
+            //db.InsertOrReplace(new PixivOffset { Index = 0, Offset = pixs.Last().Id + 1 });
 
 
             Message = $"写入数据库完成{pixs.Last().Id}";
@@ -731,16 +731,138 @@ namespace AspPix
 
         public static string HTTPMEssage { get; set; }
 
-        static async Task CalingHtml(ChannelWriter<(int id, int mark, string[] tags, DateTime d, byte b)> writer, int n)
+
+        static Task<int> GetDateTimeId(DateTime desDT)
+        {
+
+
+            static Func<int, Task<DateTime>> CreateGetDateTimeFunc()
+            {
+                var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
+
+                return async (n) =>
+                {
+
+                    foreach (var item in Enumerable.Range(0, 6))
+                    {
+                        try
+                        {
+                            var id = n + item;
+
+                            //Console.WriteLine(id);
+
+
+                            var res = await http(id.ToString()).ConfigureAwait(false);
+
+                            if (res.IsSuccessStatusCode)
+                            {
+                                var s = await res.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                                GetDateTimeAndENFromHtml(s, out var d, out _);
+
+                                //Console.WriteLine($"{d} {id}");
+
+                                return d;
+                            }
+                        }
+                        catch (TaskCanceledException)
+                        {
+
+                        }
+                        catch (HttpRequestException)
+                        {
+
+                        }
+                    }
+
+                    return DateTime.Now.AddDays(1);
+                };
+            }
+
+            static async Task<int> GetDateTimeId(Func<int, Task<DateTime>> func, int min, int max, DateTime desDT)
+            {
+                if (min >= max)
+                {
+                    return -1;
+                }
+
+                var n = min + ((max - min) / 2);
+
+                var vd = await func(n).ConfigureAwait(false);
+
+                vd = new DateTime(vd.Year, vd.Month, vd.Day);
+
+                if (vd < desDT)
+                {
+                    min = n;
+
+                    return await GetDateTimeId(func, min, max, desDT).ConfigureAwait(false);
+                }
+                else if (vd > desDT)
+                {
+                    max = n;
+
+                    return await GetDateTimeId(func, min, max, desDT).ConfigureAwait(false);
+                }
+                else
+                {
+                    return n;
+                }
+            }
+
+
+            static async Task<(int min, int max)> GetMaxId(Func<int, Task<DateTime>> func, int min, int span, DateTime desDT)
+            {
+                var vd = await func(min).ConfigureAwait(false);
+
+                vd = new DateTime(vd.Year, vd.Month, vd.Day);
+
+                if (vd < desDT)
+                {
+                    span = span * 2;
+
+                    return await GetMaxId(func, min + span, span, desDT).ConfigureAwait(false);
+                }
+                else
+                {
+                    return (min - span, min);
+                }
+            }
+
+            const int MIN = 80000000;
+            const int SPAN = 1000;
+
+
+
+            static async Task<int> Get(DateTime desDT)
+            {
+                desDT = new DateTime(desDT.Year, desDT.Month, desDT.Day);
+
+                var func = CreateGetDateTimeFunc();
+
+                var (min, max) = await GetMaxId(func, MIN, SPAN, desDT).ConfigureAwait(false);
+
+
+                return await GetDateTimeId(CreateGetDateTimeFunc(), min, max, desDT);
+            }
+
+            return Get(desDT);
+        }
+
+
+
+        static async Task CalingHtml(ChannelWriter<(int id, int mark, string[] tags, DateTime d, byte b)> writer, DateTime desDT)
         {
 
             var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
 
+            int n = await GetDateTimeId(desDT).ConfigureAwait(false);
 
-
-
+            int err = 0;
             foreach (var item in GetIndexId(n))
             {
+
+
                 try
                 {
 
@@ -769,9 +891,11 @@ namespace AspPix
 
 
                         //Console.WriteLine(item);
+
+                        HTTPMEssage = $"完成一个 {d} {item}";
                     }
 
-                    HTTPMEssage = $"完成一个 {item}";
+                    
                 }
                 catch (TaskCanceledException)
                 {
@@ -779,8 +903,15 @@ namespace AspPix
                 }
                 catch (HttpRequestException)
                 {
+                    if (err++ > 100)
+                    {
+                        return;
+                    }
 
                 }
+
+
+                err = 0;
             }
         }
 
@@ -797,6 +928,8 @@ namespace AspPix
 
         }
 
+        
+
         public static void Start(Func<DataConnection> func)
         {
             static int GetOffsetId(Func<DataConnection> func)
@@ -805,14 +938,12 @@ namespace AspPix
                 return (db.GetTable<PixivOffset>().FirstOrDefault() ?? new PixivOffset { Offset = 80176039 }).Offset;
             }
 
+           
             var chn = Channel.CreateBounded<(int id, int mark, string[] tags, DateTime d, byte b)>(ConstValue.BU_LOAD_COUNT);
-
-
-            var n = GetOffsetId(func);
 
             Task.Run(() => MessageLog());
 
-            Task.Run(() => Catch(() => CalingHtml(chn, n)));
+            Task.Run(() => Catch(() => LoopDey()));
 
             var th = new Thread(() => WriteDB(func, chn));
 
@@ -820,6 +951,20 @@ namespace AspPix
 
 
             Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
+
+
+            async Task LoopDey()
+            {
+
+                
+                while (true)
+                {
+                    DateTime d = DateTime.Now.AddDays(-30);
+
+                    await CalingHtml(chn.Writer, d).ConfigureAwait(false);
+                }
+            }
+
         }
 
 
@@ -861,11 +1006,11 @@ namespace AspPix
 
         public const int BU_COUNT = 100;
 
-        public const int BU_LOAD_COUNT = 10000;
+        public const int BU_LOAD_COUNT = 100;
 
 
 
-        public const int TAG_LOAD_COUNT = 10000;
+        public const int TAG_LOAD_COUNT = 100;
 
         public const int TAG_LOAD_POOL_COUNT = 100;
 

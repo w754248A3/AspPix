@@ -21,12 +21,12 @@ namespace AspPix.Pages
 
         public uint Down { get; set; }
 
-        public string Select { get; set; }
-
         public IEnumerable<string> Tags { get; set; }
 
         public string Tag { get; set; }
         
+        public string Date { get; set; }
+
         static IQueryable<Pixiv2> CreateExQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
         {
             return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid)
@@ -35,67 +35,49 @@ namespace AspPix.Pages
               .Select(p => p.right);
         }
 
-        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, int tagid)
+        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> pix, int tagid)
         {
             var has = db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
-
-            var pix = db.GetTable<Pixiv2>();
 
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
-        public async Task OnGetAsync(string select, string tag, uint down)
+        public async Task OnGetAsync(string tag, uint down, string date)
         {
             Tags = Info.Tags;
 
             Down = down;
+           
+            Date = date ?? "";
 
-            string t;
-            if (string.IsNullOrWhiteSpace(tag))
-            {
-                if (string.IsNullOrWhiteSpace(select))
-                {
-                    Select = "";
+            Tag = tag ?? "";
 
-                    Tag = "";
-
-                    t = "";
-                }
-                else
-                {
-                    Select = select;
-
-                    Tag = "";
-
-                    t = Select;
-                }
-            }
-            else
-            {
-                Select = tag;
-
-                Tag = tag;
-
-
-                t = tag;
-            }
-
-         
+            string t = Tag;
+            
 
             using var db = Info.DbCreateFunc();
 
 
-            IQueryable<Pixiv2> query;
+            IQueryable<Pixiv2> query = db.GetTable<Pixiv2>();
+
+
+
+            if (DateTime.TryParse(date, out var d))
+            {
+              
+                query = query.Where(p => p.Date > d);
+            }
+
 
             if (string.IsNullOrWhiteSpace(t))
             {
-                query = db.GetTable<Pixiv2>();
+                
             }
             else
             {
                 var id = PixCaling.CreateGetHashCode()(t);
 
-                query = CreateQuery(db, id);
+                query = CreateQuery(db, query, id);
 
             }
 

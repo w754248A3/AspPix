@@ -39,6 +39,9 @@ namespace AspPix
                 app.UseDeveloperExceptionPage();
             }
 
+
+            app.UseStaticFiles();
+
             app.UseRouting();
 
             app.UseSession();

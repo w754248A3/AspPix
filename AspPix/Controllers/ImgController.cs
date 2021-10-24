@@ -24,7 +24,7 @@ namespace AspPix.Controllers
 
             using var db = Info.DbCreateFunc();
 
-            var img = db.GetTable<Info.PixImg>().Where(p => p.Id == id).FirstOrDefault();
+            var img = await db.GetTable<Info.PixImg>().Where(p => p.Id == id).FirstOrDefaultAsync();
 
 
             if (img is not null)
@@ -35,16 +35,13 @@ namespace AspPix.Controllers
 
             try
             {
-
-
-
                 var by = await Info.GetImg(Info.Base64Decode(path), Info.Base64Decode(path2));
 
                 db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
 
                 return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
             }
-            catch (System.Net.Http.HttpRequestException)
+            catch (HttpRequestException)
             {
 
             }
@@ -54,7 +51,6 @@ namespace AspPix.Controllers
             }
 
             return NotFound();
-
         }
     }
 }

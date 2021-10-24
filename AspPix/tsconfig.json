@@ -3,10 +3,12 @@
     "noImplicitAny": false,
     "noEmitOnError": true,
     "removeComments": false,
-    "sourceMap": true,
+    "sourceMap": false,
     "target": "es6",
     "outDir": "wwwroot/js"
   },
+
+  "compileOnSave": true,
 
   "include": [ "SourceTs" ]
 

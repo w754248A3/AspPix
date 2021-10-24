@@ -4,15 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="wwwroot\js - 复制\**" />
-    <Content Remove="wwwroot\js - 复制\**" />
-    <EmbeddedResource Remove="wwwroot\js - 复制\**" />
-    <None Remove="wwwroot\js - 复制\**" />
-    <TypeScriptCompile Remove="wwwroot\js - 复制\**" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="linq2db" Version="3.4.4" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
@@ -26,22 +18,6 @@
   <ItemGroup>
     <Folder Include="wwwroot\js\" />
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <TypeScriptTarget>ES2015</TypeScriptTarget>
-    <TypeScriptJSXEmit>React</TypeScriptJSXEmit>
-    <TypeScriptModuleKind>ES6</TypeScriptModuleKind>
-    <TypeScriptCompileOnSaveEnabled>False</TypeScriptCompileOnSaveEnabled>
-    <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
-    <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
-    <TypeScriptOutFile />
-    <TypeScriptOutDir>C:\Users\LeiKaiFeng\source\repos\AspPix\AspPix\wwwroot\js</TypeScriptOutDir>
-    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
-    <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
-    <TypeScriptSourceMap>False</TypeScriptSourceMap>
-    <TypeScriptMapRoot />
-    <TypeScriptSourceRoot>C:\Users\LeiKaiFeng\source\repos\AspPix\AspPix\SourceTs</TypeScriptSourceRoot>
-  </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="Xcopy /y /E $(ProjectDir)wwwroot $(OutDir)wwwroot" />

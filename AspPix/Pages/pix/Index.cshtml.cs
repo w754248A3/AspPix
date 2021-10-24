@@ -52,35 +52,22 @@ namespace AspPix.Pages
 
             Tag = tag ?? "";
 
-            string t = Tag;
-            
-
             using var db = Info.DbCreateFunc();
-
 
             IQueryable<Pixiv2> query = db.GetTable<Pixiv2>();
 
-
-
             if (DateTime.TryParse(date, out var d))
-            {
-              
-                query = query.Where(p => p.Date > d);
+            {          
+                query = query.Where(p => p.Date >= d);
             }
 
 
-            if (string.IsNullOrWhiteSpace(t))
+            if (!string.IsNullOrWhiteSpace(Tag))
             {
-                
-            }
-            else
-            {
-                var id = PixCaling.CreateGetHashCode()(t);
+                var id = PixCaling.CreateGetHashCode()(tag);
 
                 query = CreateQuery(db, query, id);
-
             }
-
 
             var items = await query
                 .OrderByDescending(item => item.Mark)
@@ -88,11 +75,12 @@ namespace AspPix.Pages
                 .Take(ConstValue.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
 
+            static string CreateQueryString(Pixiv2 p)
+            {
+                return $"/pix/api/img?id={p.Id}&path={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, false))}&path2={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, true))}";
+            }
 
-            Func<Pixiv2, string> func = (p) => $"/pix/api/img?id={p.Id}&path={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, false))}&path2={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, true))}";
-
-            Scrs = items.Select(item => (func(item), "/pix/viewimg?id=" + item.Id));
+            Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
         }
-
     }
 }

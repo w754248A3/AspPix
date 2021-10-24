@@ -8,18 +8,16 @@
     <style>
         img {
             height:95%;
-
-        }
-
-        a{
-            margin:10px,7px;
         }
     </style>
     <img src="@Model.BigUri"/>
     <div>
+        <span>@Model.Mesagge</span>
+    </div>
+    <div>
         @foreach (var item in Model.Src)
         {
-            <span>     </span><a href="@item.uri">@item.tag</a><span>      </span>
+            <span>     </span><a href="@item.uri" target="_blank">@item.tag</a><span>      </span>
         }
     </div>
 </div>

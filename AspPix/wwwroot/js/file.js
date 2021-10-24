@@ -1,44 +1,46 @@
 (function () {
     document.addEventListener("DOMContentLoaded", function () {
-        let up = document.getElementsByClassName("up");
-        let down = document.getElementsByClassName("down");
-        let f = document.getElementById("form");
-        let n = document.getElementById("down");
-        let tag = document.getElementById("tag");
-        let select = document.getElementById("select");
-        let reset = document.getElementById("reset");
-        let d = document.getElementById("date");
-        reset.onclick = function () {
-            d.value = "";
+        let upButton = document.getElementsByClassName("up");
+        let downButton = document.getElementsByClassName("down");
+        let getForm = document.getElementById("form");
+        let pageCount = document.getElementById("down");
+        let tagInput = document.getElementById("tag");
+        let selectInput = document.getElementById("select");
+        let resetButton = document.getElementById("reset");
+        let dateInput = document.getElementById("date");
+        function tagChange() {
+            pageCount.value = (0).toString();
+            getForm.submit();
+        }
+        resetButton.onclick = function () {
+            dateInput.value = "";
         };
-        tag.onchange = function () {
-            n.value = (0).toString();
+        tagInput.onchange = tagChange;
+        selectInput.onchange = function () {
+            tagInput.value = selectInput.value;
+            tagChange();
         };
-        select.onchange = function () {
-            n.value = (0).toString();
-            tag.value = select.value;
-        };
-        function add(ie, func) {
+        dateInput.onchange = tagChange;
+        function addButtonEvent(ie, func) {
             Array.from(ie, function (v) {
                 v.onclick = func;
             });
         }
-        add(up, function () {
-            if (n.value) {
-                let count = Number(n.value);
+        addButtonEvent(upButton, function () {
+            if (pageCount.value) {
+                let count = Number(pageCount.value);
                 if (count > 0) {
-                    n.value = (count - 1).toString();
-                    f.submit();
+                    pageCount.value = (count - 1).toString();
                 }
+                getForm.submit();
             }
         });
-        add(down, function () {
-            if (n.value) {
-                let count = Number(n.value);
-                n.value = (count + 1).toString();
-                f.submit();
+        addButtonEvent(downButton, function () {
+            if (pageCount.value) {
+                let count = Number(pageCount.value);
+                pageCount.value = (count + 1).toString();
+                getForm.submit();
             }
         });
     });
 })();
-//# sourceMappingURL=file.js.map

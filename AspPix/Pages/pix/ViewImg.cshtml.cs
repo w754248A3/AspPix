@@ -16,7 +16,9 @@ namespace AspPix.Pages
     {
         public string BigUri { get; set; }
 
-        public (string tag, string uri)[] Src { get; set; }
+        public IEnumerable<(string tag, string uri)> Src { get; set; }
+
+        public string Mesagge { get; set; }
 
         static string CreateBigUri(string host, string s)
         {
@@ -37,14 +39,16 @@ namespace AspPix.Pages
                 .InnerJoin(db.GetTable<PixivTag>(), (left, right) => left == right.Id, (left, right) => right.Tag)
                 .ToArrayAsync();
 
-            Func<string, string> func = (s) =>
+            static string func(string s)
             {
                 var tag = Uri.EscapeDataString(s);
 
                 return $"/pix/index?select=&tag={tag}&down=0";
-            };
+            }
 
-            Src = tags.Select(p => (p, func(p))).ToArray();
+            Mesagge = $"{item.Id} {item.Mark} {item.Date}";
+
+            Src = tags.Select(p => (p, func(p)));
         }
     }
 }

@@ -1,43 +1,50 @@
 ﻿(function () {
     document.addEventListener("DOMContentLoaded", function () {
 
-        let up = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("up");
+        let upButton = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("up");
 
-        let down = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("down");
+        let downButton = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("down");
 
-        let f = <HTMLFormElement>document.getElementById("form");
+        let getForm = <HTMLFormElement>document.getElementById("form");
 
-        let n = <HTMLInputElement>document.getElementById("down");
+        let pageCount = <HTMLInputElement>document.getElementById("down");
 
-        let tag = <HTMLInputElement>document.getElementById("tag");
+        let tagInput = <HTMLInputElement>document.getElementById("tag");
 
-        let select = <HTMLInputElement>document.getElementById("select");
+        let selectInput = <HTMLInputElement>document.getElementById("select");
 
-        let reset = <HTMLInputElement>document.getElementById("reset");
+        let resetButton = <HTMLInputElement>document.getElementById("reset");
 
-        let d = <HTMLInputElement>document.getElementById("date");
-
-
-
-        reset.onclick = function () {
+        let dateInput = <HTMLInputElement>document.getElementById("date");
 
 
-            d.value = "";
+        function tagChange() {
+
+            pageCount.value = (0).toString();
+
+            getForm.submit();
+        }
+
+
+        resetButton.onclick = function () {
+
+            dateInput.value = "";
         };
 
-        tag.onchange = function () {
+        tagInput.onchange = tagChange;
 
-            n.value = (0).toString();
+
+        selectInput.onchange = function () {
+
+            tagInput.value = selectInput.value;
+
+            tagChange();
         };
 
+        dateInput.onchange = tagChange;
+       
 
-        select.onchange = function () {
-            n.value = (0).toString();
-            tag.value = select.value;
-        };
-
-
-        function add(ie: HTMLCollectionOf<HTMLButtonElement>, func : ()=> any) {
+        function addButtonEvent<T>(ie: Iterable<T & HTMLButtonElement>, func: () => any) {
 
             Array.from(ie, function (v) {
 
@@ -45,41 +52,33 @@
             });
         }
 
+        addButtonEvent(upButton, function () {
 
+            if (pageCount.value) {
 
-
-        add(up, function () {
-
-            if (n.value) {
-
-                let count = Number(n.value);
+                let count = Number(pageCount.value);
 
                 if (count > 0) {
 
-                    n.value = (count - 1).toString();
+                    pageCount.value = (count - 1).toString();
 
-                    f.submit();
+                   
                 }
-
-
+                
+                getForm.submit();
             }
         });
 
 
-        add(down, function () {
-            if (n.value) {
+        addButtonEvent(downButton, function () {
+            if (pageCount.value) {
 
-                let count = Number(n.value);
+                let count = Number(pageCount.value);
 
-                n.value = (count + 1).toString();
+                pageCount.value = (count + 1).toString();
 
-
-                f.submit();
-
-
+                getForm.submit();
             }
         });
     });
-
-
 })();

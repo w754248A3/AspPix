@@ -95,7 +95,7 @@ namespace AspPix
             {
 
                 var db = new DataConnection(
-                    LinqToDB.ProviderName.MySql,
+                    ProviderName.MySql,
                     $"Host=192.168.0.101;Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
 
 
@@ -331,15 +331,6 @@ namespace AspPix
         }
 
 
-        static IEnumerable<int> GetIndexId(int start)
-        {
-            while (true)
-            {
-                yield return start++;
-            }
-        }
-
-
         public static HttpMessageHandler GetHttpMessageHandler(string dns_sni)
         {
             const int TCP_PORT = 443;
@@ -348,28 +339,25 @@ namespace AspPix
             {
 
                 ConnectTimeout = new TimeSpan(0, 0, 5),
-
-                //KeepAlivePingTimeout = new TimeSpan(0, 0, 5),
-
-                //KeepAlivePingDelay = new TimeSpan(0, 0, 5),
-
-                //KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
-
+                
+                KeepAlivePingTimeout = new TimeSpan(0, 0, 5),
+                
+                KeepAlivePingDelay = new TimeSpan(0, 0, 5),
+                
+                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+                
                 ResponseDrainTimeout = new TimeSpan(0, 0, 5),
-
-                //PooledConnectionIdleTimeout = new TimeSpan(0,0,5),
-
-                PooledConnectionLifetime = new TimeSpan(0, 0, 15),
-
+                
+                PooledConnectionLifetime = new TimeSpan(0, 1, 0),
+                
                 AutomaticDecompression = DecompressionMethods.All,
-
+                
                 EnableMultipleHttp2Connections = true,
-
+                
                 MaxConnectionsPerServer = 6,
-
-
-
+                
                 UseProxy = false,
+
 
                 ConnectCallback = async (info, token) =>
                 {
@@ -545,9 +533,9 @@ namespace AspPix
             };
         }
 
-        public static string Message { get; set; }
+        public static string WriteDBMessage { get; set; }
 
-        static void WriteDB2(Func<DataConnection> func, ChannelReader<(int id, int mark, string[] tags, DateTime d, byte b)> reader)
+        static void WriteDB(Func<DataConnection> func, ChannelReader<CalingTmep> reader)
         {
             static void WritePixTagHas(DataConnection db, IEnumerable<IEnumerable<PixivTagHas>> pixivs)
             {
@@ -640,16 +628,13 @@ namespace AspPix
 
             foreach (var _ in Enumerable.Range(0, COUNT))
             {
-                (int id, int mark, string[] tags, DateTime d, byte b) item;
+                CalingTmep item;
               
                 while (!reader.TryRead(out item))
                 {
-                    //Info.LogLine("DB端等待数据");
-                    reader.WaitToReadAsync().AsTask().Wait();
-                    //Info.LogLine("DB端有了数据");
+                    Thread.Sleep(new TimeSpan(0, 0, 3));
                 }
-
-               
+                
                 pixs.Add(new Pixiv2 { Id = item.id, Mark = item.mark, Date = item.d, ImgEN = item.b });
 
                 id_tags_s.Add((item.id, item.tags));
@@ -657,7 +642,7 @@ namespace AspPix
                 Array.ForEach(item.tags, p => dic[p] = hash(p));
             }
 
-            Message = "开始写入数据库";
+            WriteDBMessage = "开始写入数据库";
 
             var map = id_tags_s.Select(item => item.Item2.Select(p => new PixivTagHas { ItemId = item.Item1, TagId = dic[p] }));
 
@@ -674,45 +659,31 @@ namespace AspPix
             //db.InsertOrReplace(new PixivOffset { Index = 0, Offset = pixs.Last().Id + 1 });
 
 
-            Message = $"写入数据库完成{pixs.Last().Id}";
+            WriteDBMessage = $"写入数据库完成{pixs.Last().Id}";
         }
 
-        static bool IsE(Exception e, Type type)
+        static void StartWriteDB(Func<DataConnection> func, ChannelReader<CalingTmep> reader)
         {
 
-            if (e is null)
+            var th = new Thread(() =>
             {
-                return false;
-            }
-            else if (e.GetType() == type)
-            {
-                return true;
-            }
-            else
-            {
-                return IsE(e.InnerException, type);
-            }
-        }
-
-
-        static void WriteDB(Func<DataConnection> func, ChannelReader<(int id, int mark, string[] tags, DateTime d, byte b)> reader)
-        {
-            try
-            {
-                while (true)
+                try
                 {
-                    WriteDB2(func, reader);
+                    while (true)
+                    {
+                        WriteDB(func, reader);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+
+                    Environment.Exit(0);
                 }
 
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
+            });
 
-                Environment.Exit(0);
-            }
-
-
+            th.Start();     
         }
 
         static async Task Catch(Func<Task> func)
@@ -729,7 +700,7 @@ namespace AspPix
             }
         }
 
-        public static string HTTPMEssage { get; set; }
+        public static string ClaingMessage { get; set; }
 
 
         static Task<int> GetDateTimeId(DateTime desDT)
@@ -851,30 +822,29 @@ namespace AspPix
 
 
 
-        static async Task CalingHtml(ChannelWriter<(int id, int mark, string[] tags, DateTime d, byte b)> writer, DateTime desDT)
+        static async Task CalingHtml(ChannelWriter<CalingTmep> writer, int id)
         {
 
             var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
 
-            int n = await GetDateTimeId(desDT).ConfigureAwait(false);
-
+           
             int err = 0;
-            foreach (var item in GetIndexId(n))
+            
+            while (true)
             {
-
-
                 try
                 {
 
-                    HTTPMEssage = $"开始爬取 {item}";
+                    ClaingMessage = $"开始爬取 {id}";
 
-                    var response = await http(item.ToString()).ConfigureAwait(false);
+                    var response = await http(id.ToString()).ConfigureAwait(false);
 
-                    HTTPMEssage = $"获取HTML {item}";
-
+                    
                     if (response.IsSuccessStatusCode)
                     {
                         var s = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                        ClaingMessage = $"已获取HTML {id}";
 
                         var mark = GetMarkFromHtml(s);
 
@@ -887,31 +857,57 @@ namespace AspPix
 
                         GetDateTimeAndENFromHtml(s, out d, out b);
 
-                        await writer.WriteAsync((item, mark, tags, d, b)).ConfigureAwait(false);
+                        await writer.WriteAsync(new CalingTmep(id, mark, tags, d, b)).ConfigureAwait(false);
 
 
                         //Console.WriteLine(item);
 
-                        HTTPMEssage = $"完成一个 {d} {item}";
+                        ClaingMessage = $"完成一个 {d} {id}";
+
+
+
+                        err = 0;
+                    }
+                    else
+                    {
+
+                        if (err++ > 100)
+                        {
+                            return;
+                        }
+
+
+                        ClaingMessage = $"{(int)response.StatusCode}HTML {id}";
                     }
 
-                    
+                    id++;
                 }
                 catch (TaskCanceledException)
                 {
-
+                    ClaingMessage = $"Cancel HTML {id}";
                 }
-                catch (HttpRequestException)
+                catch (HttpRequestException e)
                 {
-                    if (err++ > 100)
-                    {
-                        return;
-                    }
-
+                    ClaingMessage = $"{e.Message} HTML {id}";
                 }
+            }
+        }
 
+        public static string LoopMessage { get; set; }
 
-                err = 0;
+        static async Task StartCalingHtml(ChannelWriter<CalingTmep> writer)
+        {
+            while (true)
+            {
+                DateTime d = DateTime.Now.AddDays(-30);
+
+                int n = await GetDateTimeId(d).ConfigureAwait(false);
+
+                //int n = 90000000;
+
+                LoopMessage = $"start {d} {n}";
+                await CalingHtml(writer, n).ConfigureAwait(false);
+                LoopMessage = $"end {d} {n}";
             }
         }
 
@@ -919,13 +915,10 @@ namespace AspPix
         {
             while (true)
             {
-                await Task.Delay(new TimeSpan(0, 0, 15)).ConfigureAwait(false);
+                await Task.Delay(new TimeSpan(0, 0, 3)).ConfigureAwait(false);
 
-                Info.LogLine($"{Message} {HTTPMEssage}");
-
+                Info.LogLine($"{WriteDBMessage} {ClaingMessage} {LoopMessage}");
             }
-
-
         }
 
         
@@ -939,35 +932,14 @@ namespace AspPix
             }
 
            
-            var chn = Channel.CreateBounded<(int id, int mark, string[] tags, DateTime d, byte b)>(ConstValue.BU_LOAD_COUNT);
+            var chn = Channel.CreateBounded<CalingTmep>(ConstValue.BU_LOAD_COUNT);
 
             Task.Run(() => MessageLog());
 
-            Task.Run(() => Catch(() => LoopDey()));
+            StartWriteDB(func, chn);
 
-            var th = new Thread(() => WriteDB(func, chn));
-
-            th.Start();
-
-
-            Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
-
-
-            async Task LoopDey()
-            {
-
-                
-                while (true)
-                {
-                    DateTime d = DateTime.Now.AddDays(-30);
-
-                    await CalingHtml(chn.Writer, d).ConfigureAwait(false);
-                }
-            }
-
+            Task.Run(() => Catch(() => StartCalingHtml(chn)));          
         }
-
-
     }
 
     public static class ConstValue
@@ -1028,6 +1000,7 @@ namespace AspPix
         public static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
 
             Info.Init();
 
@@ -1044,5 +1017,32 @@ namespace AspPix
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+    }
+
+    internal struct CalingTmep
+    {
+        public int id;
+        public int mark;
+        public string[] tags;
+        public DateTime d;
+        public byte b;
+
+        public CalingTmep(int id, int mark, string[] tags, DateTime d, byte b)
+        {
+            this.id = id;
+            this.mark = mark;
+            this.tags = tags;
+            this.d = d;
+            this.b = b;
+        }
+
+        public void Deconstruct(out int id, out int mark, out string[] tags, out DateTime d, out byte b)
+        {
+            id = this.id;
+            mark = this.mark;
+            tags = this.tags;
+            d = this.d;
+            b = this.b;
+        }
     }
 }

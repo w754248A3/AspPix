@@ -1,4 +1,5 @@
 using LinqToDB;
+using LinqToDB.Common;
 using LinqToDB.Data;
 using LinqToDB.Mapping;
 using Microsoft.AspNetCore.Hosting;
@@ -91,6 +92,8 @@ namespace AspPix
 
         public static void Init()
         {
+            Configuration.ContinueOnCapturedContext = false;
+
             DbCreateFunc = () =>
             {
 

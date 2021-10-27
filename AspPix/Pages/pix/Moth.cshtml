@@ -1,0 +1,33 @@
+﻿@page
+@model AspPix.Pages.MothModel
+@{
+}
+
+
+@using AspPix
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, AspPix
+
+<div>
+    <script src="~/js/moth.js"></script>
+    <div>
+        <form id="form_up" method="get">
+            <input type="date" name="date" value="@Model.As(Model.Up)" />
+        </form>
+        <form id="form_down" method="get">
+            <input type="date" name="date" value="@Model.As(Model.Down)" />
+        </form>
+        <button class="up">上一页</button>
+        <button class="down">下一页</button>
+    </div>
+    <div>
+        @foreach (var item in Model.Scrs)
+        {
+            <a href="@item.big" target="_blank"><my-img img-uri="@item.small"></my-img></a>
+        }
+    </div>
+    <div>
+        <button class="up">上一页</button>
+        <button class="down">下一页</button>
+    </div>
+</div>

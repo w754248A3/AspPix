@@ -562,9 +562,7 @@ namespace AspPix
                             }
 
                         }
-                    }
-
-                                
+                    }                            
                 }
             }
 
@@ -703,8 +701,6 @@ namespace AspPix
             }
         }
 
-        public static string ClaingMessage { get; set; }
-
 
         static Task<int> GetDateTimeId(DateTime desDT)
         {
@@ -825,20 +821,20 @@ namespace AspPix
 
 
 
-        static async Task CalingHtml(ChannelWriter<CalingTmep> writer, int id)
+        static async Task CalingHtml(ChannelWriter<CalingTmep> writer, int id, Action<string> message, Func<int, bool> func)
         {
 
             var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
 
            
             int err = 0;
-            
-            while (true)
+
+            while (func(id))
             {
                 try
                 {
 
-                    ClaingMessage = $"开始爬取 {id}";
+                    message($"开始爬取 {id}");
 
                     var response = await http(id.ToString()).ConfigureAwait(false);
 
@@ -847,7 +843,7 @@ namespace AspPix
                     {
                         var s = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                        ClaingMessage = $"已获取HTML {id}";
+                        message($"已获取HTML {id}");
 
                         var mark = GetMarkFromHtml(s);
 
@@ -865,7 +861,7 @@ namespace AspPix
 
                         //Console.WriteLine(item);
 
-                        ClaingMessage = $"完成一个 {d} {id}";
+                        message($"完成一个 {d} {id}");
 
 
 
@@ -880,23 +876,50 @@ namespace AspPix
                         }
 
 
-                        ClaingMessage = $"{(int)response.StatusCode}HTML {id}";
+                        message($"{(int)response.StatusCode}HTML {id}");
                     }
 
                     id++;
                 }
                 catch (TaskCanceledException)
                 {
-                    ClaingMessage = $"Cancel HTML {id}";
+                    message($"Cancel HTML {id}");
                 }
                 catch (HttpRequestException e)
                 {
-                    ClaingMessage = $"{e.Message} HTML {id}";
+                    message($"{e.Message} HTML {id}");
                 }
             }
         }
 
         public static string LoopMessage { get; set; }
+
+        public static string CM1 { get; set; }
+        public static string CM2 { get; set; }
+
+        static async Task StartCalingHtml2(Func<DataConnection> func, ChannelWriter<CalingTmep> writer)
+        {
+            static int GetOffsetId(Func<DataConnection> func)
+            {
+                using var db = func();
+                return (db.GetTable<PixivOffset>().FirstOrDefault() ?? new PixivOffset { Offset = 80176039 }).Offset;
+            }
+
+            const int SPAN = 1000;
+            
+            while (true)
+            {
+                var id = GetOffsetId(func) - (SPAN * 4);
+
+                await CalingHtml(writer, id, (s) => CM2 = s, (n) => n <= (id + SPAN));
+
+                using var db = func();
+            
+                db.InsertOrReplace(new PixivOffset { Index = 0, Offset = (id + SPAN) });
+            }
+
+
+        }
 
         static async Task StartCalingHtml(ChannelWriter<CalingTmep> writer)
         {
@@ -909,7 +932,7 @@ namespace AspPix
                 //int n = 90000000;
 
                 LoopMessage = $"start {d} {n}";
-                await CalingHtml(writer, n).ConfigureAwait(false);
+                await CalingHtml(writer, n, (s) => CM1 = s, (b) => true).ConfigureAwait(false);
                 LoopMessage = $"end {d} {n}";
             }
         }
@@ -920,7 +943,7 @@ namespace AspPix
             {
                 await Task.Delay(new TimeSpan(0, 0, 3)).ConfigureAwait(false);
 
-                Info.LogLine($"{WriteDBMessage} {ClaingMessage} {LoopMessage}");
+                Info.LogLine($"{WriteDBMessage} {CM1} {CM2} {LoopMessage}");
             }
         }
 
@@ -928,20 +951,15 @@ namespace AspPix
 
         public static void Start(Func<DataConnection> func)
         {
-            static int GetOffsetId(Func<DataConnection> func)
-            {
-                using var db = func();
-                return (db.GetTable<PixivOffset>().FirstOrDefault() ?? new PixivOffset { Offset = 80176039 }).Offset;
-            }
-
-           
+            
             var chn = Channel.CreateBounded<CalingTmep>(ConstValue.BU_LOAD_COUNT);
 
             Task.Run(() => MessageLog());
 
             StartWriteDB(func, chn);
 
-            Task.Run(() => Catch(() => StartCalingHtml(chn)));          
+            Task.Run(() => Catch(() => StartCalingHtml(chn)));
+            Task.Run(() => Catch(() => StartCalingHtml2(func, chn)));          
         }
     }
 

@@ -63,9 +63,9 @@ namespace AspPix.Pages
 
 
            var items = await  db.GetTable<PixCaling.Pixiv2>()
-                .Where(p => p.Date >= left && p.Date <= right)
+                .Where(p => p.Date > left && p.Date <= right)
                 .OrderByDescending(p => p.Mark)
-                .Take(50)
+                .Take(150)
                 .ToListAsync();
 
 

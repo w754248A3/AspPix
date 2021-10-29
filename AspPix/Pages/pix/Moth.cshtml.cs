@@ -56,7 +56,7 @@ namespace AspPix.Pages
 
             left = Up;
 
-            right = Down;
+            right = dateTime;
 
 
             using var db = Info.DbCreateFunc();

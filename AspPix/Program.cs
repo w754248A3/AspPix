@@ -455,8 +455,8 @@ namespace AspPix
             var handler = GetHttpMessageHandler(dns_sni);
             
 
-            var http = new HttpMessageInvoker(handler);
-
+            var http = new HttpClient(handler);
+            http.Timeout = new TimeSpan(0, 0, 10);
             var request = CreateHttpRequestMessage(new Uri(base_uri), referer);
 
             return (s) => http.SendAsync(request(s), default);
@@ -702,14 +702,13 @@ namespace AspPix
         }
 
 
-        static Task<int> GetDateTimeId(DateTime desDT)
+        static Task<int> GetDateTimeId(Func<string, Task<HttpResponseMessage>> http, DateTime desDT)
         {
 
 
-            static Func<int, Task<DateTime>> CreateGetDateTimeFunc()
+            static Func<int, Task<DateTime>> CreateGetDateTimeFunc(Func<string, Task<HttpResponseMessage>> http)
             {
-                var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
-
+                
                 return async (n) =>
                 {
 
@@ -804,37 +803,36 @@ namespace AspPix
 
 
 
-            static async Task<int> Get(DateTime desDT)
+            static async Task<int> Get(Func<string, Task<HttpResponseMessage>> http, DateTime desDT)
             {
                 desDT = new DateTime(desDT.Year, desDT.Month, desDT.Day);
 
-                var func = CreateGetDateTimeFunc();
+                var func = CreateGetDateTimeFunc(http);
 
                 var (min, max) = await GetMaxId(func, MIN, SPAN, desDT).ConfigureAwait(false);
 
 
-                return await GetDateTimeId(CreateGetDateTimeFunc(), min, max, desDT);
+                return await GetDateTimeId(func, min, max, desDT);
             }
 
-            return Get(desDT);
+            return Get(http, desDT);
         }
 
 
 
-        static async Task CalingHtml(ChannelWriter<CalingTmep> writer, int id, Action<string> message, Func<int, bool> func)
+        static async Task CalingHtml(Func<string, Task<HttpResponseMessage>> http, ChannelWriter<CalingTmep> writer, int id, Action<string> message, Func<int, bool> func)
         {
 
-            var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
-
+            
            
             int err = 0;
-
+            DateTime dateTime = default;
             while (func(id))
             {
                 try
                 {
 
-                    message($"开始爬取 {id}");
+                    message($"开始爬取 {dateTime} {id}");
 
                     var response = await http(id.ToString()).ConfigureAwait(false);
 
@@ -864,7 +862,7 @@ namespace AspPix
                         message($"完成一个 {d} {id}");
 
 
-
+                        dateTime = d;
                         err = 0;
                     }
                     else
@@ -892,12 +890,8 @@ namespace AspPix
             }
         }
 
-        public static string LoopMessage { get; set; }
-
-        public static string CM1 { get; set; }
-        public static string CM2 { get; set; }
-
-        static async Task StartCalingHtml2(Func<DataConnection> func, ChannelWriter<CalingTmep> writer)
+     
+        static async Task StartCalingHtml2(Func<string, Task<HttpResponseMessage>> http, Func<DataConnection> func, ChannelWriter<CalingTmep> writer, Action<string> message)
         {
             static int GetOffsetId(Func<DataConnection> func)
             {
@@ -906,12 +900,13 @@ namespace AspPix
             }
 
             const int SPAN = 1000;
-            
+
+            var id = GetOffsetId(func) - (SPAN * 4);
+
             while (true)
             {
-                var id = GetOffsetId(func) - (SPAN * 4);
-
-                await CalingHtml(writer, id, (s) => CM2 = s, (n) => n <= (id + SPAN));
+               
+                await CalingHtml(http, writer, id, message, (n) => n <= (id + SPAN));
 
                 using var db = func();
             
@@ -921,29 +916,29 @@ namespace AspPix
 
         }
 
-        static async Task StartCalingHtml(ChannelWriter<CalingTmep> writer)
+        static async Task StartCalingHtml(Func<string, Task<HttpResponseMessage>> http, ChannelWriter<CalingTmep> writer, int days, Action<string> message)
         {
             while (true)
             {
-                DateTime d = DateTime.Now.AddDays(-30);
+                DateTime d = DateTime.Now.AddDays(days);
 
-                int n = await GetDateTimeId(d).ConfigureAwait(false);
+                int n = await GetDateTimeId(http, d).ConfigureAwait(false);
 
                 //int n = 90000000;
 
-                LoopMessage = $"start {d} {n}";
-                await CalingHtml(writer, n, (s) => CM1 = s, (b) => true).ConfigureAwait(false);
-                LoopMessage = $"end {d} {n}";
+                
+                await CalingHtml(http, writer, n, message, (b) => true).ConfigureAwait(false);
+                
             }
         }
 
-        static async Task MessageLog()
+        static async Task MessageLog(Func<string> func)
         {
             while (true)
             {
                 await Task.Delay(new TimeSpan(0, 0, 3)).ConfigureAwait(false);
 
-                Info.LogLine($"{WriteDBMessage} {CM1} {CM2} {LoopMessage}");
+                Info.LogLine($"{WriteDBMessage} {func()}");
             }
         }
 
@@ -951,15 +946,22 @@ namespace AspPix
 
         public static void Start(Func<DataConnection> func)
         {
-            
+            var http = CreatePixGetFunc("www.pixivision.net", "http://www.pixiv.net/artworks/", null);
+
             var chn = Channel.CreateBounded<CalingTmep>(ConstValue.BU_LOAD_COUNT);
 
-            Task.Run(() => MessageLog());
-
+            
             StartWriteDB(func, chn);
+            string s1, s2, s3, s4;
+            s1 = s2 = s3 = s4 = string.Empty;
+            Task.Run(() => Catch(() => StartCalingHtml(http, chn, -30, (s) => s1 = s)));
+            Task.Run(() => Catch(() => StartCalingHtml(http, chn, -7, (s) => s2 = s)));
+            Task.Run(() => Catch(() => StartCalingHtml(http, chn, -3, (s) => s3 = s)));
+            Task.Run(() => Catch(() => StartCalingHtml2(http, func, chn, (s) => s4 = s)));
 
-            Task.Run(() => Catch(() => StartCalingHtml(chn)));
-            Task.Run(() => Catch(() => StartCalingHtml2(func, chn)));          
+
+            Task.Run(() => MessageLog(() => $"{s1} {s2} {s3} {s4}"));
+
         }
     }
 

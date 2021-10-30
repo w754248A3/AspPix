@@ -13,11 +13,12 @@ namespace AspPix.Pages
     {
         public IEnumerable<(string small, string big)> Scrs { get; set; }
 
-        public DateTime Up;
+        public DateTime Up { get; set; }
 
-        public DateTime Down;
+        public DateTime Down { get; set; }
 
-     
+        public int Span { get; set; }
+
         public string As(DateTime dateTime)
         {
             static string A(int n)
@@ -35,10 +36,13 @@ namespace AspPix.Pages
             return $"{dateTime.Year}-{A(dateTime.Month)}-{A(dateTime.Day)}";
         }
 
-        public async Task OnGetAsync(DateTime? date)
+        public async Task OnGetAsync(DateTime? date, int span)
         {
             DateTime left, right;
             DateTime dateTime;
+
+            Span = span;
+
             if (date is null)
             {
                 dateTime = DateTime.Now;    
@@ -49,9 +53,9 @@ namespace AspPix.Pages
             }
 
 
-            Up = dateTime.AddMonths(-1);
+            Up = dateTime.AddDays(-span);
 
-            Down = dateTime.AddMonths(1);
+            Down = dateTime.AddDays(span);
 
 
             left = Up;

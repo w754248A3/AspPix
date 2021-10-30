@@ -13,9 +13,11 @@
     <div>
         <form id="form_up" method="get">
             <input type="date" name="date" value="@Model.As(Model.Up)" />
+            <input type="number" name="span" value="@Model.Span" />
         </form>
         <form id="form_down" method="get">
             <input type="date" name="date" value="@Model.As(Model.Down)" />
+            <input type="number" name="span" value="@Model.Span" />
         </form>
         <button class="up">上一页</button>
         <button class="down">下一页</button>

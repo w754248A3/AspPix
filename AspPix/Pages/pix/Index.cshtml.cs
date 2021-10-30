@@ -27,6 +27,8 @@ namespace AspPix.Pages
         
         public string Date { get; set; }
 
+
+
         static IQueryable<Pixiv2> CreateExQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
         {
             return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid)

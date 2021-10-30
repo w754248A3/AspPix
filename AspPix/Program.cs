@@ -879,7 +879,7 @@ namespace AspPix
 
                     id++;
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     message($"Cancel HTML {id}");
                 }

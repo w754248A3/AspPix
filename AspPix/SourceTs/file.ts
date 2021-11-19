@@ -16,6 +16,7 @@
         let resetButton = <HTMLInputElement>document.getElementById("reset");
 
         let dateInput = <HTMLInputElement>document.getElementById("date");
+        let date2Input = <HTMLInputElement>document.getElementById("date2");
 
 
         function tagChange() {
@@ -29,10 +30,13 @@
         resetButton.onclick = function () {
 
             dateInput.value = "";
+
+            date2Input.value = "";
         };
 
         tagInput.onchange = tagChange;
 
+        
 
         selectInput.onchange = function () {
 
@@ -42,7 +46,9 @@
         };
 
         dateInput.onchange = tagChange;
-       
+
+        date2Input.onchange = tagChange;
+
 
         function addButtonEvent<T>(ie: Iterable<T & HTMLButtonElement>, func: () => any) {
 

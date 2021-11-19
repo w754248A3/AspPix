@@ -27,7 +27,7 @@ namespace AspPix.Pages
         
         public string Date { get; set; }
 
-
+        public string Date2 { get; set; }
 
         static IQueryable<Pixiv2> CreateExQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
         {
@@ -44,13 +44,15 @@ namespace AspPix.Pages
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
-        public async Task OnGetAsync(string tag, uint down, string date)
+        public async Task OnGetAsync(string tag, uint down, string date, string date2)
         {
             Tags = Info.Tags;
 
             Down = down;
            
             Date = date ?? "";
+
+            Date2 = date2 ?? "";
 
             Tag = tag ?? "";
 
@@ -61,6 +63,11 @@ namespace AspPix.Pages
             if (DateTime.TryParse(date, out var d))
             {          
                 query = query.Where(p => p.Date >= d);
+            }
+
+            if (DateTime.TryParse(date2, out var d2)) 
+            {
+                query = query.Where(p => p.Date <= d2);
             }
 
 

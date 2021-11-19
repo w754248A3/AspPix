@@ -8,12 +8,14 @@
         let selectInput = document.getElementById("select");
         let resetButton = document.getElementById("reset");
         let dateInput = document.getElementById("date");
+        let date2Input = document.getElementById("date2");
         function tagChange() {
             pageCount.value = (0).toString();
             getForm.submit();
         }
         resetButton.onclick = function () {
             dateInput.value = "";
+            date2Input.value = "";
         };
         tagInput.onchange = tagChange;
         selectInput.onchange = function () {
@@ -21,6 +23,7 @@
             tagChange();
         };
         dateInput.onchange = tagChange;
+        date2Input.onchange = tagChange;
         function addButtonEvent(ie, func) {
             Array.from(ie, function (v) {
                 v.onclick = func;

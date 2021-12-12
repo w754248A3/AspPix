@@ -7,9 +7,9 @@ using LinqToDB;
 using LinqToDB.Mapping;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Pixiv2 = AspPix.PixCaling.Pixiv2;
-using PixivTag = AspPix.PixCaling.PixivTag;
-using PixivTagHas = AspPix.PixCaling.PixivTagHas;
+using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivTag = AspPix.Fs.PixSql.PixivTag;
+using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
 
 namespace AspPix.Pages
 {
@@ -73,7 +73,7 @@ namespace AspPix.Pages
 
             if (!string.IsNullOrWhiteSpace(Tag))
             {
-                var id = PixCaling.CreateGetHashCode()(tag);
+                var id = Fs.PixSql.getTagHash(tag);
 
                 query = CreateQuery(db, query, id);
             }
@@ -86,7 +86,7 @@ namespace AspPix.Pages
 
             static string CreateQueryString(Pixiv2 p)
             {
-                return $"/pix/api/img?id={p.Id}&path={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, false))}&path2={Info.Base64Encode(PixCaling.AsUriFromDateTimeIdSmall(p, true))}";
+                return $"/pix/api/img?id={p.Id}&path={Info.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Info.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
             }
 
             Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));

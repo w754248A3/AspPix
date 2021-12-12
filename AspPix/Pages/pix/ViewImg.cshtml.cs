@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LinqToDB;
 using LinqToDB.Mapping;
-using Pixiv2 = AspPix.PixCaling.Pixiv2;
-using PixivTag = AspPix.PixCaling.PixivTag;
-using PixivTagHas = AspPix.PixCaling.PixivTagHas;
+using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivTag = AspPix.Fs.PixSql.PixivTag;
+using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
 
 namespace AspPix.Pages
 {
@@ -19,6 +19,8 @@ namespace AspPix.Pages
         public IEnumerable<(string tag, string uri)> Src { get; set; }
 
         public string Mesagge { get; set; }
+
+        public string SourceUri { get; set; }
 
         static string CreateBigUri(string host, string s)
         {
@@ -33,7 +35,7 @@ namespace AspPix.Pages
 
             var item = await db.GetTable<Pixiv2>().FirstAsync(p => p.Id == id);
 
-            BigUri = CreateBigUri(HOST, PixCaling.AsUriFromDateTimeId(item));
+            BigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.ImgEN));
 
             var tags = await db.GetTable<PixivTagHas>().Where(p => p.ItemId == id).Select(p => p.TagId)
                 .InnerJoin(db.GetTable<PixivTag>(), (left, right) => left == right.Id, (left, right) => right.Tag)
@@ -47,6 +49,8 @@ namespace AspPix.Pages
             }
 
             Mesagge = $"{item.Id} {item.Mark} {item.Date}";
+
+            SourceUri = $"https://www.pixiv.net/artworks/{item.Id}";
 
             Src = tags.Select(p => (p, func(p)));
         }

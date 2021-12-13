@@ -446,10 +446,12 @@ module PixCrawling =
         let ch = Channel.CreateBounded<PixSql.PixivHtml>(100)
 
        
-        let one desDateTime log =
+        let rec one getDes log =
             backgroundTask{
-                let! id = PixHTTP.getDateTimeId http desDateTime
+                let! id = PixHTTP.getDateTimeId http (getDes())
                 do! PixLoad.runLoad id http ch.Writer log
+
+                do! one getDes log
             }
 
         let mutable dblog = ""
@@ -472,9 +474,9 @@ module PixCrawling =
 
         logLine() |> ignore
 
-        one (DateTime.Now) (fun e -> onedaylog <- e) |> ignore
-        one (DateTime.Now.AddDays(-3.0)) (fun e -> threedaylog <- e) |> ignore
-        one (DateTime.Now.AddDays(-7.0)) (fun e -> sevendaylog <- e) |> ignore
+        one (fun () -> (DateTime.Now)) (fun e -> onedaylog <- e) |> ignore
+        one (fun () -> (DateTime.Now.AddDays(-3.0))) (fun e -> threedaylog <- e) |> ignore
+        one (fun () -> (DateTime.Now.AddDays(-7.0))) (fun e -> sevendaylog <- e) |> ignore
 
 
 

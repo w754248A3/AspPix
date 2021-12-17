@@ -131,15 +131,20 @@ module PixSql =
             |> Seq.iter (fun v -> sert v)
 
 
+        let rec insetLoop(vs:Generic.List<PixivHtml>) =
+            try
+                inset(vs)
+            with
+            | :? MySql.Data.MySqlClient.MySqlException -> insetLoop(vs)
 
 
         
         let loop() =
             while true do
                 let vs = loadCount()
-                inset vs
+                insetLoop vs
 
-                log $"{DateTime.Now}:DB Last Id:{vs.Last().pix.Id}"
+                log $"{DateTime.Now}:DB:{vs.Last().pix.Id}"
 
 
         let th = new Thread(fun () -> loop())
@@ -344,7 +349,7 @@ module PixHTTP =
         
         let MIN = 80000000
 
-        let SPAN = 1000
+        let SPAN = 10000
 
         let LOOP = 10
 
@@ -410,7 +415,7 @@ module PixLoad =
     
     
 
-    let rec load (notfoundCount:int) (id:int) (http:int -> Task<string>) (writer:ChannelWriter<PixSql.PixivHtml>) (log:string->unit) =
+    let rec load (name:string) (notfoundCount:int) (id:int) (http:int -> Task<string>) (writer:ChannelWriter<PixSql.PixivHtml>) (log:string->unit) =
         backgroundTask{
             try
                 let! s = http id
@@ -419,20 +424,20 @@ module PixLoad =
 
                 do! writer.WriteAsync(v)
 
-                log $"{DateTime.Now}:Load Id:{id}"
+                log $"{v.pix.Date}:{name}:{id}"
 
-                return! load 0 (id + 1) http writer log
+                return! load name 0 (id + 1) http writer log
             with
             | :? HttpRequestException 
                 as e
                 when e.StatusCode = Nullable(HttpStatusCode.NotFound)
-                -> if notfoundCount = 1000 then () else return! load (notfoundCount + 1) (id + 1) http writer log 
-            | :? HttpRequestException -> return! load 0 id http writer log
-            | :? TaskCanceledException -> return! load 0 id http writer log
+                -> if notfoundCount = 1000 then () else return! load name (notfoundCount + 1) (id + 1) http writer log 
+            | :? HttpRequestException -> return! load name 0 id http writer log
+            | :? TaskCanceledException -> return! load name 0 id http writer log
         }
 
-    let runLoad id http writer log =
-        load 0 id http writer log
+    let runLoad name id http writer log =
+        load name 0 id http writer log
 
 module PixCrawling =
     
@@ -446,12 +451,12 @@ module PixCrawling =
         let ch = Channel.CreateBounded<PixSql.PixivHtml>(100)
 
        
-        let rec one getDes log =
+        let rec one name getDes log =
             backgroundTask{
                 let! id = PixHTTP.getDateTimeId http (getDes())
-                do! PixLoad.runLoad id http ch.Writer log
+                do! PixLoad.runLoad name id http ch.Writer log
 
-                do! one getDes log
+                do! one name getDes log
             }
 
         let mutable dblog = ""
@@ -470,15 +475,27 @@ module PixCrawling =
             }
 
 
-        PixSql.runInsetDb 10 db ch.Reader (fun e-> dblog <- e)
+        PixSql.runInsetDb 1000 db ch.Reader (fun e-> dblog <- e)
 
         logLine() |> ignore
 
-        one (fun () -> (DateTime.Now)) (fun e -> onedaylog <- e) |> ignore
-        one (fun () -> (DateTime.Now.AddDays(-3.0))) (fun e -> threedaylog <- e) |> ignore
-        one (fun () -> (DateTime.Now.AddDays(-7.0))) (fun e -> sevendaylog <- e) |> ignore
+        one "1" (fun () -> (DateTime.Now.AddDays(-1.0))) (fun e -> onedaylog <- e) |> ignore
+        one "3" (fun () -> (DateTime.Now.AddDays(-4.0))) (fun e -> threedaylog <- e) |> ignore
+        one "7" (fun () -> (DateTime.Now.AddDays(-8.0))) (fun e -> sevendaylog <- e) |> ignore
 
 
+
+module PixFunc =
+
+    let base64Encode (text:string) =
+        text
+        |> Encoding.UTF8.GetBytes
+        |> Convert.ToBase64String
+
+    let base64Decode (text:string) =
+        text
+        |> Convert.FromBase64String
+        |> Encoding.UTF8.GetString
 
 
 

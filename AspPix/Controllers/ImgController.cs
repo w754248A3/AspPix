@@ -35,7 +35,7 @@ namespace AspPix.Controllers
 
             try
             {
-                var by = await Info.GetImg(Info.Base64Decode(path), Info.Base64Decode(path2));
+                var by = await Info.GetImg(Fs.PixFunc.base64Decode(path), Fs.PixFunc.base64Decode(path2));
 
                 db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
 

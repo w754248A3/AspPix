@@ -29,12 +29,9 @@ namespace AspPix.Pages
 
         public string Date2 { get; set; }
 
-        static IQueryable<Pixiv2> CreateExQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> query, int tagid)
+        public static string CreateQueryString(Pixiv2 p)
         {
-            return db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid)
-              .RightJoin(query, (left, right) => left.ItemId == right.Id, (left, right) => new { left, right })
-              .Where(p => p.left == null)
-              .Select(p => p.right);
+            return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
         }
 
         static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> pix, int tagid)
@@ -83,11 +80,6 @@ namespace AspPix.Pages
                 .Skip((int)(Down * ConstValue.TAKE_SMALL_IMAGE))
                 .Take(ConstValue.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
-
-            static string CreateQueryString(Pixiv2 p)
-            {
-                return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
-            }
 
             Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
         }

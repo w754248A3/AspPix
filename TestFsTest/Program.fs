@@ -22,20 +22,8 @@ open System.Text.RegularExpressions
 [<EntryPoint>]
 let main argv =
     
-    TaskScheduler.UnobservedTaskException.Add(fun evArgs -> Console.WriteLine(evArgs))
+    
+    
 
 
-
-    Task.FromException(new ArgumentException())|> ignore
-
-
-    GC.Collect();
-    GC.Collect();
-    GC.Collect();
-    GC.Collect();
-
-
-    while true do
-        ()
-    Console.ReadLine()|>ignore
     0

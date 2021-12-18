@@ -49,11 +49,6 @@ namespace AspPix
             public string Tag { get; set; }
         }
 
-        public static void LogLine(string s)
-        {
-            Console.WriteLine($"{DateTime.Now}:{s}");
-        }
-
         public static Func<DataConnection> DbCreateFunc { get; private set; }
 
         public static IEnumerable<string> Tags { get; private set; }
@@ -102,7 +97,7 @@ namespace AspPix
                     $"Host=192.168.0.101;Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
 
 
-                db.CommandTimeout = 3 * 60;
+                db.CommandTimeout = 0;
 
 
                 return db;
@@ -198,16 +193,19 @@ namespace AspPix
 
     public class Program
     {
-
+        
+        
         public static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
-            TaskScheduler.UnobservedTaskException += (obj, e) => { Console.WriteLine(e.Exception); Environment.Exit(0); };
+            TaskScheduler.UnobservedTaskException += (obj, e) => { Console.WriteLine($"{e.Exception.GetType()} {e.Exception.Message}"); Environment.Exit(0); };
             
             Info.Init();
 
-            AspPix.Fs.PixCrawling.run();
+            var http = Fs.PixHTTP.createGetHTMLFunc(new Uri("http://www.pixiv.net/artworks/"), "www.pixivision.net", 443, "www.pixivision.net", "https://www.pixivision.net");
+
+            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, http);
           
             var host = CreateHostBuilder(args).Build();
 

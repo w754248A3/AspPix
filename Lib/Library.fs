@@ -192,7 +192,6 @@ module PixParse =
 
     
     
-    
     let re_original = new Regex(@"""original"":""([^""]+)""");
     
     
@@ -441,12 +440,10 @@ module PixLoad =
 
 module PixCrawling =
     
-    let run() =
-        let db()  = 
-            let v = new DataConnection(ProviderName.MySql, $"Host=192.168.0.101;Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none")
-            v.CommandTimeout<-0
-            v
-        let http = PixHTTP.createGetHTMLFunc (new Uri("http://www.pixiv.net/artworks/")) "www.pixivision.net" 443 "www.pixivision.net" "https://www.pixivision.net" 
+    let run(createDb:Func<DataConnection>) (http) =
+        
+        let db = fun () -> createDb.Invoke()
+
 
         let ch = Channel.CreateBounded<PixSql.PixivHtml>(100)
 
@@ -496,8 +493,5 @@ module PixFunc =
         text
         |> Convert.FromBase64String
         |> Encoding.UTF8.GetString
-
-
-
 
 

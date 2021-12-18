@@ -78,13 +78,7 @@ namespace AspPix.Pages
 
 
 
-
-            static string CreateQueryString(Pixiv2 p)
-            {
-                return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
-            }
-
-            Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
+            Scrs = items.Select(item => (IndexModel.CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
 
         }
     }

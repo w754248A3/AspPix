@@ -97,7 +97,7 @@ namespace AspPix
                     $"Host=192.168.0.101;Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
 
 
-                db.CommandTimeout = 0;
+                //db.CommandTimeout = 0;
 
 
                 return db;

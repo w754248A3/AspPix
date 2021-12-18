@@ -417,13 +417,18 @@ module PixLoad =
     let rec load (name:string) (notfoundCount:int) (id:int) (http:int -> Task<string>) (writer:ChannelWriter<PixSql.PixivHtml>) (log:string->unit) =
         backgroundTask{
             try
+                
+                log $"{DateTime.Now}:{name}:A:{id}"
+                
                 let! s = http id
-
+                
+                log $"{DateTime.Now}:{name}:B:{id}"
+                
                 let v = PixParse.getPixivHtml s id 
 
                 do! writer.WriteAsync(v)
 
-                log $"{v.pix.Date}:{name}:{id}"
+                
 
                 return! load name 0 (id + 1) http writer log
             with

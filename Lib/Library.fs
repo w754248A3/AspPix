@@ -324,7 +324,8 @@ module PixHTTP =
             backgroundTask{
                 let uri = new Uri(baseUri, id.ToString())
                 let request = createGetHttpRequest uri referer
-                let! response = http.SendAsync(request, CancellationToken.None)
+                let sou = new CancellationTokenSource(TimeSpan(0,0,10))
+                let! response = http.SendAsync(request, sou.Token)
                 ex response.IsSuccessStatusCode response.StatusCode
                 return! response.Content.ReadAsStringAsync()
             }
@@ -437,7 +438,7 @@ module PixLoad =
                 when e.StatusCode = Nullable(HttpStatusCode.NotFound)
                 -> if notfoundCount = 1000 then () else return! load name (notfoundCount + 1) (id + 1) http writer log 
             | :? HttpRequestException -> return! load name 0 id http writer log
-            | :? TaskCanceledException -> return! load name 0 id http writer log
+            | :? OperationCanceledException -> return! load name 0 id http writer log
         }
 
     let runLoad name id http writer log =

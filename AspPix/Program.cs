@@ -14,6 +14,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -57,47 +58,72 @@ namespace AspPix
      
         public static IEnumerable<string> CreateTags()
         {
-            using var db = Info.DbCreateFunc();
+            
+            var db = Info.DbCreateFunc();
+            
+            var data = DateTime.Now.AddDays(-7);
 
-            //var v = db.GetTable<Pixiv2>()
-            //.OrderByDescending(item => item.Mark)
-            //.Take(ConstValue.TAG_LOAD_POOL_COUNT);
+            var pixiv2 = db.GetTable<Pixiv2>()
+                .Where(p => p.Date > data)
+                .OrderByDescending(p => p.Mark).Take(10000);
 
-
-
-
-            //var b = db.GetTable<PixivTagHas>()
-            //.InnerJoin(v, (left, right) => left.ItemId == right.Id, (left, right) => left)
-            //.Select(item => item.TagId)
-            //.Distinct();
+            var hasTag = db.GetTable<PixivTagHas>()
+                .InnerJoin(pixiv2, (a, b) => a.ItemId == b.Id, (a, b) => a);
 
 
 
-            //var c = db.GetTable<PixivTag>()
-            //.InnerJoin(b, (left, right) => left.Id == right, (left, right) => left.Tag);
+            var tagId = db.GetTable<PixivTag>()
+                .InnerJoin(hasTag, (a, b) => a.Id == b.TagId, (a, b) => a)
+                .GroupBy(p => p.Id)
+                .Select(p => new { Id = p.Key, Count = p.Count() });
 
 
 
 
-            //c.Take(ConstValue.TAG_LOAD_COUNT).Insert(db.GetTable<ReloadTag>(), (p) => new ReloadTag { Tag = p });
+            var tags = db.GetTable<PixivTag>()
+                .InnerJoin(tagId, (a, b) => a.Id == b.Id, (a, b) => new { a.Tag, a.Id, b.Count })
+                .OrderByDescending(p => p.Count)
+                .Take(150);
 
 
-            return db.GetTable<ReloadTag>().Select(p => p.Tag).ToArray();
+            return tags.ToArray().Select(p => p.Tag).ToArray();
+
+        }
+
+        static void SetTags()
+        {
+            Tags = Array.Empty<string>();
+
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    Tags = CreateTags();
+
+
+                    await Task.Delay(new TimeSpan(1, 0, 0)).ConfigureAwait(false);
+
+                }
+
+
+            });
         }
 
         public static void Init()
         {
             Configuration.ContinueOnCapturedContext = false;
-
+            Configuration.Linq.GuardGrouping = false;
             DbCreateFunc = () =>
             {
 
+                var ip = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "127.0.0.1" : "192.168.0.101";
+
                 var db = new DataConnection(
                     ProviderName.MySql,
-                    $"Host=192.168.0.101;Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
+                    $"Host={ip};Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
 
 
-                //db.CommandTimeout = 0;
+                db.CommandTimeout = 60 * 5;
 
 
                 return db;
@@ -133,7 +159,7 @@ namespace AspPix
 
 
 
-            Tags = CreateTags();
+            SetTags();
 
         }
 

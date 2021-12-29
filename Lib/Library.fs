@@ -26,13 +26,13 @@ open System.Collections
 
 module PixSql =
 
-    type Pixiv2 = {
+    type PixivData = {
         
         [<PrimaryKey>]
         Id:int
         Mark:int
         Date:DateTime
-        ImgEN:byte
+        Flags:int
     }
     
     type PixivTag = {
@@ -41,7 +41,7 @@ module PixSql =
         Tag:string
     }
 
-    type PixivTagHas = {
+    type PixivTagMap = {
         
         [<PrimaryKey>]
         ItemId:int
@@ -51,7 +51,7 @@ module PixSql =
     }
 
     type PixivHtml = {
-        pix:Pixiv2
+        pix:PixivData
         tag:string[]
     }
 
@@ -176,7 +176,7 @@ module PixParse =
         |> String.concat "/"
 
     let getImgUri date id imgEN =
-        let ex = if imgEN = 0uy then "jpg" else "png"
+        let ex = if imgEN = 0 then "jpg" else "png"
 
         let path = asPathFromDateTime date
 
@@ -208,7 +208,7 @@ module PixParse =
         new Uri(re_original.Match(s).Groups.[1].Value)
 
     let getIsjpg (uri:Uri) =
-        if uri.AbsolutePath.EndsWith(".jpg") then 0uy else 1uy
+        if uri.AbsolutePath.EndsWith(".jpg") then 0 else 1
 
     let getTag s =
         
@@ -220,7 +220,7 @@ module PixParse =
         | m when m.Success -> getArray m.Groups.[1].Value
         | _ -> [||]
 
-    let getPixiv2 s id :PixSql.Pixiv2 =
+    let getPixiv2 s id :PixSql.PixivData =
         let mark = getMarkCount s
 
         let uri = getUri s
@@ -229,7 +229,7 @@ module PixParse =
 
         let isjpg = getIsjpg uri
 
-        {Id = id; Mark = mark; Date = date; ImgEN = isjpg}
+        {Id = id; Mark = mark; Date = date; Flags = isjpg}
 
         
     let getPixivHtml s id :PixSql.PixivHtml =

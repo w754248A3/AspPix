@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LinqToDB;
 using LinqToDB.Async;
-using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
+using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix.Pages
 {
@@ -69,7 +69,7 @@ namespace AspPix.Pages
             using var db = Info.DbCreateFunc();
 
 
-           var items = await  db.GetTable<Pixiv2>()
+           var items = await  db.GetTable<PixivData>()
                 .Where(p => p.Date > left && p.Date <= right)
                 .OrderByDescending(p => p.Mark)
                 .Take(150)

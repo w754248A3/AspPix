@@ -22,9 +22,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
+using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix
 {
@@ -40,16 +40,6 @@ namespace AspPix
             public byte[] Img { get; set; }
         }
 
-        public class ReloadTag
-        {
-
-            [PrimaryKey, Identity]
-            public int Index { get; set; }
-
-            [Column(Length = 250, CanBeNull = false)]
-            public string Tag { get; set; }
-        }
-
         public static Func<DataConnection> DbCreateFunc { get; private set; }
 
         public static IEnumerable<string> Tags { get; private set; }
@@ -63,11 +53,11 @@ namespace AspPix
             
             var data = DateTime.Now.AddDays(-7);
 
-            var pixiv2 = db.GetTable<Pixiv2>()
+            var pixiv2 = db.GetTable<PixivData>()
                 .Where(p => p.Date > data)
                 .OrderByDescending(p => p.Mark).Take(10000);
 
-            var hasTag = db.GetTable<PixivTagHas>()
+            var hasTag = db.GetTable<PixivTagMap>()
                 .InnerJoin(pixiv2, (a, b) => a.ItemId == b.Id, (a, b) => a);
 
 

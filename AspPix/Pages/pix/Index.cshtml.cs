@@ -7,9 +7,9 @@ using LinqToDB;
 using LinqToDB.Mapping;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
+using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix.Pages
 {
@@ -29,14 +29,14 @@ namespace AspPix.Pages
 
         public string Date2 { get; set; }
 
-        public static string CreateQueryString(Pixiv2 p)
+        public static string CreateQueryString(PixivData p)
         {
             return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
         }
 
-        static IQueryable<Pixiv2> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<Pixiv2> pix, int tagid)
+        static IQueryable<PixivData> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<PixivData> pix, int tagid)
         {
-            var has = db.GetTable<PixivTagHas>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
+            var has = db.GetTable<PixivTagMap>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
 
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
@@ -55,7 +55,7 @@ namespace AspPix.Pages
 
             using var db = Info.DbCreateFunc();
 
-            IQueryable<Pixiv2> query = db.GetTable<Pixiv2>();
+            IQueryable<PixivData> query = db.GetTable<PixivData>();
 
             if (DateTime.TryParse(date, out var d))
             {          

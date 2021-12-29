@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LinqToDB;
 using LinqToDB.Mapping;
-using Pixiv2 = AspPix.Fs.PixSql.Pixiv2;
+using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagHas = AspPix.Fs.PixSql.PixivTagHas;
+using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix.Pages
 {
@@ -33,11 +33,11 @@ namespace AspPix.Pages
 
             using var db = Info.DbCreateFunc();
 
-            var item = await db.GetTable<Pixiv2>().FirstAsync(p => p.Id == id);
+            var item = await db.GetTable<PixivData>().FirstAsync(p => p.Id == id);
 
-            BigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.ImgEN));
+            BigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
 
-            var tags = await db.GetTable<PixivTagHas>().Where(p => p.ItemId == id).Select(p => p.TagId)
+            var tags = await db.GetTable<PixivTagMap>().Where(p => p.ItemId == id).Select(p => p.TagId)
                 .InnerJoin(db.GetTable<PixivTag>(), (left, right) => left == right.Id, (left, right) => right.Tag)
                 .ToArrayAsync();
 

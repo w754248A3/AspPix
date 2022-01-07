@@ -9,7 +9,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lib", "Lib\Lib.fsproj", "{2
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestFs", "TestFs\TestFs.fsproj", "{D479873E-7675-481D-9277-18D161F423D7}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestFsTest", "TestFsTest\TestFsTest.fsproj", "{6F6D9B29-A136-4C42-8B0E-B70D77F057FC}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestFsTest", "TestFsTest\TestFsTest.fsproj", "{6F6D9B29-A136-4C42-8B0E-B70D77F057FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -82,21 +82,7 @@ namespace AspPix
 
         static void SetTags()
         {
-            Tags = Array.Empty<string>();
-
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    Tags = CreateTags();
-
-
-                    await Task.Delay(new TimeSpan(1, 0, 0)).ConfigureAwait(false);
-
-                }
-
-
-            });
+            Tags = CreateTags();
         }
 
         public static void Init()

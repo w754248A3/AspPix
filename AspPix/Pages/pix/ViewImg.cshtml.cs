@@ -22,6 +22,12 @@ namespace AspPix.Pages
 
         public string SourceUri { get; set; }
 
+        public string LiveUri { get; set; }
+
+        public string IsLive { get; set; }
+
+
+
         static string CreateBigUri(string host, string s)
         {
             return host.TrimEnd('/') + "/" + s.TrimStart('/');
@@ -53,6 +59,13 @@ namespace AspPix.Pages
             SourceUri = $"https://www.pixiv.net/artworks/{item.Id}";
 
             Src = tags.Select(p => (p, func(p)));
+
+            var c  = await db.GetTable<Fs.PixSql.PixLive>().Where(p => p.Id == id).CountAsync();
+
+            IsLive = c > 0 ? "Ï²»¶" : "²»Ï²»¶";
+
+            LiveUri = "/pix/api/live?id=" + id;
+
         }
     }
 }

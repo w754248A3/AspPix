@@ -29,6 +29,8 @@ namespace AspPix.Pages
 
         public string Date2 { get; set; }
 
+        public string OnlyLive { get; set; }
+
         public static string CreateQueryString(PixivData p)
         {
             return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
@@ -41,8 +43,9 @@ namespace AspPix.Pages
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
-        public async Task OnGetAsync(string tag, uint down, string date, string date2)
+        public async Task OnGetAsync(string tag, uint down, string date, string date2, string onlylive)
         {
+            
             Tags = Info.Tags;
 
             Down = down;
@@ -55,7 +58,19 @@ namespace AspPix.Pages
 
             using var db = Info.DbCreateFunc();
 
-            IQueryable<PixivData> query = db.GetTable<PixivData>();
+            IQueryable<PixivData> query;
+            if (onlylive == "on")
+            {
+
+                query = db.GetTable<PixivData>()
+                    .InnerJoin(db.GetTable<Fs.PixSql.PixLive>(), (a, b) => a.Id == b.Id, (a, b) => a);
+
+            }
+            else
+            {
+                query = db.GetTable<PixivData>();
+            }
+             
 
             if (DateTime.TryParse(date, out var d))
             {          
@@ -80,6 +95,8 @@ namespace AspPix.Pages
                 .Skip((int)(Down * ConstValue.TAKE_SMALL_IMAGE))
                 .Take(ConstValue.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
+
+            OnlyLive = onlylive;
 
             Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
         }

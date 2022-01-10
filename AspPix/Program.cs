@@ -105,15 +105,24 @@ namespace AspPix
                 return db;
             };
 
-            var func = Fs.PixHTTP.createGetByteFunc(new Uri("https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/"), "https://www.pixiv.net");
+
+            var func = new HttpClient();
+
+
 
             GetImg = async (s, s2) =>
             {
 
                 IEnumerable<Task<byte[]>> cf()
                 {
-                    yield return func.Invoke(s);
-                    yield return func.Invoke(s2);
+                    yield return func.GetByteArrayAsync(s);
+
+                    if (s2 is not null)
+                    {
+                        yield return func.GetByteArrayAsync(s2);
+                    }
+
+                   
                 }
 
                 foreach (var item in cf())

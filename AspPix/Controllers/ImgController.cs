@@ -32,10 +32,10 @@ namespace AspPix.Controllers
                 return new FileContentResult(img.Img, MediaTypeNames.Image.Jpeg);
             }
 
-
+            var host = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
             try
             {
-                var by = await Info.GetImg(Fs.PixFunc.base64Decode(path), Fs.PixFunc.base64Decode(path2));
+                var by = await Info.GetImg(host+ Fs.PixFunc.base64Decode(path), host+ Fs.PixFunc.base64Decode(path2));
 
                 db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
 

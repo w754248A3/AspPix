@@ -11,6 +11,8 @@
     <script src="~/js/file.js"></script>
     <div>
         <form id="form" method="get">
+            <label>仅喜欢</label>
+            <input type="checkbox" name="onlylive" checked="@Model.OnlyLive"/>
             <select id="select">
                 <option value="">All</option>
                 @foreach (var item in Model.Tags)

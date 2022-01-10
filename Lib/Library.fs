@@ -26,6 +26,12 @@ open System.Collections
 
 module PixSql =
 
+    type PixLive = {
+        [<PrimaryKey>]
+        Id:int
+        Img:byte[]
+    }
+
     type PixivData = {
         
         [<PrimaryKey>]

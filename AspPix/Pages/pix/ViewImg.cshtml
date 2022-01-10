@@ -7,13 +7,18 @@
 <div>
     <style>
         img {
-            height:95%;
+            height: 95%;
         }
     </style>
-    <img src="@Model.BigUri"/>
+    <img src="@Model.BigUri" />
+    <div>
+       <a href="@Model.LiveUri">@Model.IsLive</a>
+    </div>
     <div>
         <span>@Model.Mesagge</span>
-        <a href="@Model.SourceUri">pixiv</a>
+    </div>
+    <div>
+        <a href="@Model.SourceUri">Source</a>
     </div>
     <div>
         @foreach (var item in Model.Src)

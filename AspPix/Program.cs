@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -44,7 +45,7 @@ namespace AspPix
 
         public static IEnumerable<string> Tags { get; private set; }
 
-        public static Func<string, string, Task<byte[]>> GetImg { get; private set; }
+        public static Func<HttpClient, string, string, Task<byte[]>> GetImg { get; private set; }
      
         public static IEnumerable<string> CreateTags()
         {
@@ -82,7 +83,8 @@ namespace AspPix
 
         static void SetTags()
         {
-            Tags = CreateTags();
+            //Tags = CreateTags();
+            Tags = Array.Empty<string>();
         }
 
         public static void Init()
@@ -106,11 +108,7 @@ namespace AspPix
             };
 
 
-            var func = new HttpClient();
-
-
-
-            GetImg = async (s, s2) =>
+            GetImg = async (func, s, s2) =>
             {
 
                 IEnumerable<Task<byte[]>> cf()
@@ -210,8 +208,11 @@ namespace AspPix
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
-            TaskScheduler.UnobservedTaskException += (obj, e) => { Console.WriteLine($"{e.Exception.GetType()} {e.Exception.Message}"); Environment.Exit(0); };
-            
+            TaskScheduler.UnobservedTaskException += (obj, e) => { Debug.WriteLine(e.Exception); Debug.Flush(); Environment.Exit(0); };
+
+            AppDomain.CurrentDomain.UnhandledException += (obj, e) => { Debug.WriteLine(e.ExceptionObject); Debug.Flush(); };
+
+
             Info.Init();
 
             var http = Fs.PixHTTP.createGetHTMLFunc(new Uri("http://www.pixiv.net/artworks/"), "www.pixivision.net", 443, "www.pixivision.net", "https://www.pixivision.net");
@@ -225,6 +226,14 @@ namespace AspPix
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureLogging((log) => {
+
+                    log.ClearProviders();
+
+                    //log.AddConsole();
+                    log.AddDebug();
+
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();

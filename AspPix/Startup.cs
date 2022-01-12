@@ -25,8 +25,9 @@ namespace AspPix
                 options.Cookie.IsEssential = true;
             });
 
-            services.AddRazorPages();
+            services.AddHttpClient();
 
+            services.AddRazorPages();
 
             services.AddControllers();
         }

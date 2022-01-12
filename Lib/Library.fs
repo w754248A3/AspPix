@@ -470,15 +470,15 @@ module PixCrawling =
 
         let mutable dblog = ""
         let mutable onedaylog = ""
-        let mutable threedaylog = ""
         let mutable sevendaylog = ""
+        let mutable moondaylog = ""
 
         let rec logLine() =
             backgroundTask{
             
                 do! Task.Delay(TimeSpan(0,0,5))
 
-                Console.WriteLine($"{dblog} {onedaylog} {threedaylog} {sevendaylog}")
+                Console.WriteLine($"{dblog} {onedaylog} {sevendaylog} {moondaylog}")
 
                 return! logLine()
             }
@@ -489,8 +489,8 @@ module PixCrawling =
         logLine() |> ignore
 
         one "1" (fun () -> (DateTime.Now.AddDays(-1.0))) (fun e -> onedaylog <- e) |> ignore
-        one "3" (fun () -> (DateTime.Now.AddDays(-4.0))) (fun e -> threedaylog <- e) |> ignore
         one "7" (fun () -> (DateTime.Now.AddDays(-8.0))) (fun e -> sevendaylog <- e) |> ignore
+        one "30" (fun () -> (DateTime.Now.AddDays(-30.0))) (fun e -> moondaylog <- e) |> ignore
 
 
 

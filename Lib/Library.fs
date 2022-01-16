@@ -153,9 +153,7 @@ module PixSql =
                 log $"{DateTime.Now}:DB:{vs.Last().pix.Id}"
 
 
-        let th = new Thread(fun () -> loop())
-
-        th.Start()
+        loop();
 
 
 
@@ -318,23 +316,23 @@ module PixHTTP =
 
         Func<_,_,_>(func)
 
-    let createGetHTMLFunc (baseUri:Uri) dns port sni referer =
-
+    let createSocketsHttpHandler  dns port sni =
         let connectFunc = createConnectFunc dns port sni
-        let handle = createHttpMessageHandler connectFunc
-        let http = new HttpMessageInvoker(handle)
+        createHttpMessageHandler connectFunc
+
+    let createGetHTMLFunc (http:HttpClient) (id:int) (baseUri:Uri)  referer =
 
         let ex b n = if b then () else raise (HttpRequestException(n.ToString(), null, Nullable(n)))
 
-        fun (id:int) ->
-            backgroundTask{
-                let uri = new Uri(baseUri, id.ToString())
-                let request = createGetHttpRequest uri referer
-                let sou = new CancellationTokenSource(TimeSpan(0,0,10))
-                let! response = http.SendAsync(request, sou.Token)
-                ex response.IsSuccessStatusCode response.StatusCode
-                return! response.Content.ReadAsStringAsync()
-            }
+        backgroundTask{
+            let uri = new Uri(baseUri, id.ToString())
+            let request = createGetHttpRequest uri referer
+            let sou = new CancellationTokenSource(TimeSpan(0,0,10))
+            let! response = http.SendAsync(request, sou.Token)
+            ex response.IsSuccessStatusCode response.StatusCode
+            return! response.Content.ReadAsStringAsync()
+        }
+            
     
     
     let createGetByteFunc (baseUri:Uri) referer =
@@ -452,10 +450,19 @@ module PixLoad =
 
 module PixCrawling =
     
-    let run(createDb:Func<DataConnection>) (http) =
+    type PixGetHtmlHttp = {
+        Http:HttpClient
+    }
+
+    type PixGetHtmlService = {
+        Http:PixGetHtmlHttp
+    }
+
+    let run(createDb:Func<DataConnection>) (get:Func<PixGetHtmlService>) baseUri referer =
         
         let db = fun () -> createDb.Invoke()
 
+        let http = fun (n) -> PixHTTP.createGetHTMLFunc (get.Invoke().Http.Http) n baseUri referer
 
         let ch = Channel.CreateBounded<PixSql.PixivHtml>(100)
 
@@ -484,13 +491,15 @@ module PixCrawling =
             }
 
 
-        PixSql.runInsetDb 1000 db ch.Reader (fun e-> dblog <- e)
-
+        
         logLine() |> ignore
 
         one "1" (fun () -> (DateTime.Now.AddDays(-1.0))) (fun e -> onedaylog <- e) |> ignore
         one "7" (fun () -> (DateTime.Now.AddDays(-8.0))) (fun e -> sevendaylog <- e) |> ignore
         one "30" (fun () -> (DateTime.Now.AddDays(-30.0))) (fun e -> moondaylog <- e) |> ignore
+
+        PixSql.runInsetDb 1000 db ch.Reader (fun e-> dblog <- e)
+        
 
 
 

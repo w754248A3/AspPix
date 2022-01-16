@@ -17,11 +17,11 @@ namespace AspPix.Controllers
     [ApiController]
     public class ImgController : ControllerBase
     {
-        private readonly IHttpClientFactory _clientFactory;
+        private readonly PixImgGetHttp _http;
 
-        public ImgController(IHttpClientFactory clientFactory)
+        public ImgController(PixImgGetHttp http)
         {
-            _clientFactory = clientFactory;
+            _http = http;
         }
 
         [HttpGet]
@@ -42,7 +42,7 @@ namespace AspPix.Controllers
             var host = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
             try
             {
-                var by = await Info.GetImg(_clientFactory.CreateClient(), host+ Fs.PixFunc.base64Decode(path), host+ Fs.PixFunc.base64Decode(path2));
+                var by = await Info.GetImg(_http.Http, host+ Fs.PixFunc.base64Decode(path), host+ Fs.PixFunc.base64Decode(path2));
 
                 db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
 

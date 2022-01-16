@@ -2,8 +2,10 @@ using LinqToDB;
 using LinqToDB.Common;
 using LinqToDB.Data;
 using LinqToDB.Mapping;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -195,33 +197,65 @@ namespace AspPix
 
         public const int TAKE_SMALL_IMAGE = 20;
 
+
+
+        public const string DNS = "www.pixivision.net";
+
+        public const string SNI = "www.pixivision.net";
+
+        public const int PORT = 443;
+
+        public const string REFERER = "https://www.pixivision.net";
+
+        public const string BASEURI = "http://www.pixiv.net/artworks/";
+
+
 #endif
     }
 
 
+    public record PixImgGetHttp(HttpClient Http);
 
     public class Program
     {
+        static void KillSelf()
+        {
+            Process.GetCurrentProcess().Kill();
+        }
         
-        
+        static void Exit(object obj)
+        {
+            Debug.WriteLine(obj);
+
+            Debug.Flush();
+
+            KillSelf();
+        }
+
         public static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.CancelKeyPress += (ibj, e) => Environment.Exit(0);
-            TaskScheduler.UnobservedTaskException += (obj, e) => { Debug.WriteLine(e.Exception); Debug.Flush(); Environment.Exit(0); };
 
-            AppDomain.CurrentDomain.UnhandledException += (obj, e) => { Debug.WriteLine(e.ExceptionObject); Debug.Flush(); };
+            Console.CancelKeyPress += (obj, e) => KillSelf();
+
+            TaskScheduler.UnobservedTaskException += (obj, e) => Exit(e.Exception);
+
+            AppDomain.CurrentDomain.UnhandledException += (obj, e) => Exit(e.ExceptionObject);
 
 
             Info.Init();
 
-            var http = Fs.PixHTTP.createGetHTMLFunc(new Uri("http://www.pixiv.net/artworks/"), "www.pixivision.net", 443, "www.pixivision.net", "https://www.pixivision.net");
-
-            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, http);
-          
+            
             var host = CreateHostBuilder(args).Build();
 
-            host.Run();
+
+            host.Start();
+
+
+            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), new Uri(ConstValue.BASEURI), ConstValue.REFERER);
+
+
+            
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -230,7 +264,7 @@ namespace AspPix
 
                     log.ClearProviders();
 
-                    //log.AddConsole();
+                    log.AddConsole();
                     log.AddDebug();
 
                 })
@@ -238,5 +272,42 @@ namespace AspPix
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+    }
+
+    public class Startup
+    {
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddRazorPages();
+
+            services.AddControllers();
+
+            services.AddHttpClient<PixImgGetHttp>();
+
+            services.AddHttpClient<Fs.PixCrawling.PixGetHtmlHttp>()
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    return Fs.PixHTTP.createSocketsHttpHandler(ConstValue.DNS, ConstValue.PORT, ConstValue.SNI);
+                });
+
+            services.AddTransient<Fs.PixCrawling.PixGetHtmlService>();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapRazorPages();
+
+
+                endpoints.MapControllers();
+            });
+        }
     }
 }

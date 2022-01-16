@@ -22,11 +22,11 @@ namespace AspPix.Controllers
     public class LiveController : ControllerBase
     {
 
-        private readonly IHttpClientFactory _clientFactory;
+        private readonly PixImgGetHttp _http;
 
-        public LiveController(IHttpClientFactory clientFactory)
+        public LiveController(PixImgGetHttp http)
         {
-            _clientFactory = clientFactory;
+            _http = http;
         }
 
         static string CreateBigUri(string host, string s)
@@ -50,7 +50,7 @@ namespace AspPix.Controllers
 
             var bigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
             
-            var by = await Info.GetImg(_clientFactory.CreateClient(), bigUri, null);
+            var by = await Info.GetImg(_http.Http, bigUri, null);
 
 
             db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));

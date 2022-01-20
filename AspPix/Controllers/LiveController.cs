@@ -40,22 +40,31 @@ namespace AspPix.Controllers
         {
             //"https://i.pximg.net/c/540x540_70/img-master/img/2020/04/24/22/48/16/81033008_p0_master1200.jpg"
 
-            const string HOST = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
-
-
+           
             using var db = Info.DbCreateFunc();
 
-            var item = db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).First();
+            var item = await db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
-            var bigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
-            
-            var by = await Info.GetImg(_http.Http, bigUri, null);
+            var bigUri = CreateBigUri(ConstValue.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
+
+            var res = await _http.Http.GetAsync(bigUri, HttpCompletionOption.ResponseHeadersRead);
+
+            if (res.IsSuccessStatusCode)
+            {
+                var by = await res.Content.ReadAsByteArrayAsync();
 
 
-            db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));
+                db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));
 
-            return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
+                return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
+            }
+            else
+            {
+                return NotFound();
+            }
+
+           
         }
     }
 }

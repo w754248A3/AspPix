@@ -45,8 +45,8 @@ namespace AspPix.Pages
 
         public async Task OnGetAsync(string tag, uint down, string date, string date2, string onlylive)
         {
-            
-            Tags = Info.Tags;
+
+            Tags = Array.Empty<string>();
 
             Down = down;
            

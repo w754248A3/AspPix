@@ -45,10 +45,6 @@ namespace AspPix
 
         public static Func<DataConnection> DbCreateFunc { get; private set; }
 
-        public static IEnumerable<string> Tags { get; private set; }
-
-        public static Func<HttpClient, string, string, Task<byte[]>> GetImg { get; private set; }
-     
         public static IEnumerable<string> CreateTags()
         {
             
@@ -83,12 +79,6 @@ namespace AspPix
 
         }
 
-        static void SetTags()
-        {
-            //Tags = CreateTags();
-            Tags = Array.Empty<string>();
-        }
-
         public static void Init()
         {
             Configuration.ContinueOnCapturedContext = false;
@@ -108,46 +98,7 @@ namespace AspPix
 
                 return db;
             };
-
-
-            GetImg = async (func, s, s2) =>
-            {
-
-                IEnumerable<Task<byte[]>> cf()
-                {
-                    yield return func.GetByteArrayAsync(s);
-
-                    if (s2 is not null)
-                    {
-                        yield return func.GetByteArrayAsync(s2);
-                    }
-
-                   
-                }
-
-                foreach (var item in cf())
-                {
-                    try
-                    {
-                        return await item.ConfigureAwait(false);
-
-                    }
-                    catch (HttpRequestException)
-                    {
-
-                    }
-                    
-                }
-
-                throw new HttpRequestException();
-            };
-
-
-
-            SetTags();
-
         }
-
     }
 
     public static class ConstValue
@@ -209,6 +160,7 @@ namespace AspPix
 
         public const string BASEURI = "http://www.pixiv.net/artworks/";
 
+        public const string CLOUDFLARE_HOST = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
 
 #endif
     }
@@ -252,10 +204,7 @@ namespace AspPix
             host.Start();
 
 
-            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), new Uri(ConstValue.BASEURI), ConstValue.REFERER);
-
-
-            
+            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), new Uri(ConstValue.BASEURI), ConstValue.REFERER);          
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -293,7 +242,6 @@ namespace AspPix
             services.AddTransient<Fs.PixCrawling.PixGetHtmlService>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseStaticFiles();

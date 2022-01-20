@@ -88,11 +88,10 @@ module PixSql =
         let inset(vs:Generic.List<PixivHtml>) = 
             
             
-            let dic = Generic.Dictionary<string,int>()
-                     
-            let createPixTagHas() =
-                let createTagHash id tag =                    
-                    let setdic(tag)=
+                    
+            let createPixTagHas (dic:Generic.Dictionary<string,int>) (vs:Generic.List<PixivHtml>)  =
+                let createTagHash id tags =                    
+                    let setdic tag =
                         let mutable v = Unchecked.defaultof<int>
                     
                         if dic.TryGetValue(tag, &v) then
@@ -101,7 +100,7 @@ module PixSql =
                             let c = getTagHash(tag)
                             dic.Add(tag, c)
                             c                   
-                    tag
+                    tags
                     |> Array.toSeq
                     |> Seq.map (fun v -> {ItemId = id; TagId = setdic v})
                 vs
@@ -128,8 +127,10 @@ module PixSql =
             |> Seq.map (fun p -> p.pix)
             |> Seq.iter (fun v -> sertRe(v))
 
-
-            createPixTagHas()
+            let dic = Generic.Dictionary<string,int>()
+            
+            vs
+            |> createPixTagHas dic
             |> Seq.iter (fun v -> sert v)
 
             dic 
@@ -138,6 +139,7 @@ module PixSql =
 
 
         let rec insetLoop(vs:Generic.List<PixivHtml>) =
+            //假如异常未完成，重新执行
             try
                 inset(vs)
             with
@@ -316,11 +318,11 @@ module PixHTTP =
 
         Func<_,_,_>(func)
 
-    let createSocketsHttpHandler  dns port sni =
+    let createSocketsHttpHandler dns port sni =
         let connectFunc = createConnectFunc dns port sni
         createHttpMessageHandler connectFunc
 
-    let createGetHTMLFunc (http:HttpClient) (id:int) (baseUri:Uri)  referer =
+    let createGetHTMLFunc (http:HttpClient) (id:int) (baseUri:Uri) referer =
 
         let ex b n = if b then () else raise (HttpRequestException(n.ToString(), null, Nullable(n)))
 
@@ -332,23 +334,7 @@ module PixHTTP =
             ex response.IsSuccessStatusCode response.StatusCode
             return! response.Content.ReadAsStringAsync()
         }
-            
-    
-    
-    let createGetByteFunc (baseUri:Uri) referer =
-        let http = new HttpClient();
-        
-        let ex b n = if b then () else raise (HttpRequestException(n.ToString(), null, Nullable(n)))
-
-        fun (path:string) ->
-            backgroundTask{
-                let uri = new Uri(baseUri, path)
-                let request = createGetHttpRequest uri referer
-                let! response = http.SendAsync(request, CancellationToken.None)
-                ex response.IsSuccessStatusCode response.StatusCode
-                return! response.Content.ReadAsByteArrayAsync()
-            }
-
+           
     let getDateTimeId (http: int -> Task<string>) desDateTime =
         
         let MIN = 80000000

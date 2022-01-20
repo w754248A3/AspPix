@@ -24,6 +24,15 @@ namespace AspPix.Controllers
             _http = http;
         }
 
+        static string[] CreatePath(string path, string path2)
+        {
+            return new string[]
+            {
+                ConstValue.CLOUDFLARE_HOST + Fs.PixFunc.base64Decode(path),
+                ConstValue.CLOUDFLARE_HOST + Fs.PixFunc.base64Decode(path2)
+            };
+        }
+
         [HttpGet]
         public async Task<ActionResult> Get([FromQuery] string path, [FromQuery] string path2, [FromQuery] int id)
         {
@@ -33,29 +42,28 @@ namespace AspPix.Controllers
 
             var img = await db.GetTable<Info.PixImg>().Where(p => p.Id == id).FirstOrDefaultAsync();
 
-
             if (img is not null)
             {
                 return new FileContentResult(img.Img, MediaTypeNames.Image.Jpeg);
             }
 
-            var host = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
-            try
+
+            foreach (var item in CreatePath(path, path2))
             {
-                var by = await Info.GetImg(_http.Http, host+ Fs.PixFunc.base64Decode(path), host+ Fs.PixFunc.base64Decode(path2));
+                var res = await _http.Http.GetAsync(item, HttpCompletionOption.ResponseHeadersRead);
 
-                db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
+                if (res.IsSuccessStatusCode)
+                {
+                    var by = await res.Content.ReadAsByteArrayAsync();
 
-                return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
+                    db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
+
+                    return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
+                }
+
+               
             }
-            catch (HttpRequestException)
-            {
 
-            }
-            catch (TaskCanceledException)
-            {
-
-            }
 
             return NotFound();
         }

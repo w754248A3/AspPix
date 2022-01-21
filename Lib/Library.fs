@@ -181,12 +181,18 @@ module PixParse =
         |> List.toSeq
         |> String.concat "/"
 
-    let getImgUri date id imgEN =
+    let getImgUri date id imgEN count =
         let ex = if imgEN = 0 then "jpg" else "png"
 
         let path = asPathFromDateTime date
 
-        $"/img-original/img/{path}/{id}_p0.{ex}"
+        Enumerable.Range(0, count)
+        |> Seq.map (fun v ->   $"/img-original/img/{path}/{id}_p{v}.{ex}")
+        |> Seq.toArray
+
+
+       
+
 
     let getImgUriSmall date id b =
         let ex = if b then "_master1200.jpg" else "_p0_master1200.jpg"

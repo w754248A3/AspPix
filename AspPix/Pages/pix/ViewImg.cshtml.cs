@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LinqToDB;
@@ -40,8 +41,10 @@ namespace AspPix.Pages
             using var db = Info.DbCreateFunc();
 
             var item = await db.GetTable<PixivData>().FirstAsync(p => p.Id == id);
-
-            BigUri = CreateBigUri(HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
+            BigUri = JsonSerializer.Serialize(
+             Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 50)
+                .Select(p => CreateBigUri(HOST, p))
+                .ToArray());
 
             var tags = await db.GetTable<PixivTagMap>().Where(p => p.ItemId == id).Select(p => p.TagId)
                 .InnerJoin(db.GetTable<PixivTag>(), (left, right) => left == right.Id, (left, right) => right.Tag)

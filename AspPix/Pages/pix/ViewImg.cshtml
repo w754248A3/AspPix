@@ -10,9 +10,11 @@
             height: 95%;
         }
     </style>
-    <img src="@Model.BigUri" />
+    <script src="~/js/img.js"></script>
+    <div id="imgDiv" my="@Model.BigUri">
+    </div>
     <div>
-       <a href="@Model.LiveUri">@Model.IsLive</a>
+        <a href="@Model.LiveUri">@Model.IsLive</a>
     </div>
     <div>
         <span>@Model.Mesagge</span>

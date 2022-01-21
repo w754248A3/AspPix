@@ -46,7 +46,7 @@ namespace AspPix.Controllers
             var item = await db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
-            var bigUri = CreateBigUri(ConstValue.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags));
+            var bigUri = CreateBigUri(ConstValue.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());
 
             var res = await _http.Http.GetAsync(bigUri, HttpCompletionOption.ResponseHeadersRead);
 

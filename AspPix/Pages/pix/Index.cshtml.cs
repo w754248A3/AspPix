@@ -7,6 +7,8 @@ using LinqToDB;
 using LinqToDB.Mapping;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
 using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
@@ -17,6 +19,14 @@ namespace AspPix.Pages
 
     public class IndexModel : PageModel
     {
+
+        IConfiguration _con;
+
+        public IndexModel(IConfiguration configuration)
+        {
+            _con = configuration;
+        }
+
         public IEnumerable<(string small, string big)> Scrs { get; set; }
 
         public uint Down { get; set; }
@@ -31,8 +41,11 @@ namespace AspPix.Pages
 
         public string OnlyLive { get; set; }
 
+        
         public static string CreateQueryString(PixivData p)
         {
+            //QueryHelpers.AddQueryString
+
             return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
         }
 
@@ -90,10 +103,12 @@ namespace AspPix.Pages
                 query = CreateQuery(db, query, id);
             }
 
+            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
+
             var items = await query
                 .OrderByDescending(item => item.Mark)
-                .Skip((int)(Down * ConstValue.TAKE_SMALL_IMAGE))
-                .Take(ConstValue.TAKE_SMALL_IMAGE)
+                .Skip((int)(Down * info.TAKE_SMALL_IMAGE))
+                .Take(info.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
 
             OnlyLive = onlylive;

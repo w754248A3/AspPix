@@ -43,7 +43,7 @@ namespace AspPix
             public byte[] Img { get; set; }
         }
 
-        public static Func<DataConnection> DbCreateFunc { get; private set; }
+        public static Func<DataConnection> DbCreateFunc { get; set; }
 
         public static IEnumerable<string> CreateTags()
         {
@@ -83,86 +83,32 @@ namespace AspPix
         {
             Configuration.ContinueOnCapturedContext = false;
             Configuration.Linq.GuardGrouping = false;
-            DbCreateFunc = () =>
-            {
-
-                var ip = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "127.0.0.1" : "192.168.0.101";
-
-                var db = new DataConnection(
-                    ProviderName.MySql,
-                    $"Host={ip};Port=3306;User=myuser;Password=mypass;Database=mysql;SslMode=none");
-
-
-                db.CommandTimeout = 60 * 5;
-
-
-                return db;
-            };
+          
         }
     }
 
-    public static class ConstValue
+  
+
+    public class AspPixInfo
     {
+        public const string Key_Name = nameof(AspPixInfo);
+
+        public Uri CLOUDFLARE_HOST { get; set; }
+
+        public Uri BASEURI { get; set; }
+
+        public Uri REFERER { get; set; }
+
+        public string DNS { get; set; }
+
+        public string SNI { get; set; }
+
+        public int PORT { get; set; }
+
+        public int TAKE_SMALL_IMAGE { get; set; }
 
 
-        public const string IMG_HTTPCLIENT_KEY = "s.pximg.net";
-
-        public const string IMG_HTTPCLIENT_SNI = "s.pximg.net";
-
-        public const string IMG_HTTPCLIENT_BASEADDRESS = "http://i.pximg.net/";
-
-        public const string IMG_HTTPCLIENT_REFERER = "https://www.pixiv.net/";
-
-
-
-#if DEBUG
-
-        public const int BU_COUNT = 10;
-
-        public const int BU_LOAD_COUNT = 10000;
-
-
-
-        public const int TAG_LOAD_COUNT = 0;
-
-        public const int TAG_LOAD_POOL_COUNT = 0;
-
-
-
-        public const int TAKE_SMALL_IMAGE = 50;
-
-
-        
-#else
-
-        public const int BU_COUNT = 100;
-
-        public const int BU_LOAD_COUNT = 100;
-
-
-
-        public const int TAG_LOAD_COUNT = 100;
-
-        public const int TAG_LOAD_POOL_COUNT = 100;
-
-
-        public const int TAKE_SMALL_IMAGE = 20;
-
-
-
-        public const string DNS = "www.pixivision.net";
-
-        public const string SNI = "www.pixivision.net";
-
-        public const int PORT = 443;
-
-        public const string REFERER = "https://www.pixivision.net";
-
-        public const string BASEURI = "http://www.pixiv.net/artworks/";
-
-        public const string CLOUDFLARE_HOST = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
-
-#endif
+        public string DATA_BASE_CONNECT_STRING { get; set; }
     }
 
 
@@ -177,6 +123,8 @@ namespace AspPix
         
         static void Exit(object obj)
         {
+            Console.WriteLine(obj);
+
             Debug.WriteLine(obj);
 
             Debug.Flush();
@@ -201,10 +149,28 @@ namespace AspPix
             var host = CreateHostBuilder(args).Build();
 
 
+         
+            var con = host.Services.GetRequiredService<IConfiguration>();
+
+            var info = con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
+
+            Info.DbCreateFunc = () =>
+            {
+
+                var db = new DataConnection(
+                    ProviderName.MySql,
+                    info.DATA_BASE_CONNECT_STRING);
+
+
+                db.CommandTimeout = 60 * 5;
+
+
+                return db;
+            };
+
             host.Start();
-
-
-            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), new Uri(ConstValue.BASEURI), ConstValue.REFERER);          
+            
+            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);          
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -234,9 +200,11 @@ namespace AspPix
             services.AddHttpClient<PixImgGetHttp>();
 
             services.AddHttpClient<Fs.PixCrawling.PixGetHtmlHttp>()
-                .ConfigurePrimaryHttpMessageHandler(() =>
+                .ConfigurePrimaryHttpMessageHandler((iser) =>
                 {
-                    return Fs.PixHTTP.createSocketsHttpHandler(ConstValue.DNS, ConstValue.PORT, ConstValue.SNI);
+                    var info = iser.GetRequiredService<IConfiguration>().GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
+
+                    return Fs.PixHTTP.createSocketsHttpHandler(info.DNS, info.PORT, info.SNI);
                 });
 
             services.AddTransient<Fs.PixCrawling.PixGetHtmlService>();

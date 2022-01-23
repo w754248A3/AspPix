@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using LinqToDB;
+using Microsoft.Extensions.Configuration;
 
 namespace AspPix.Controllers
 {
@@ -24,14 +25,20 @@ namespace AspPix.Controllers
 
         private readonly PixImgGetHttp _http;
 
-        public LiveController(PixImgGetHttp http)
+        IConfiguration _con;
+
+        public LiveController(PixImgGetHttp http, IConfiguration configuration)
         {
             _http = http;
+
+            _con = configuration;
         }
 
-        static string CreateBigUri(string host, string s)
+        static Uri CreateBigUri(Uri host, string s)
         {
-            return host.TrimEnd('/') + "/" + s.TrimStart('/');
+
+            return new Uri(host, s);
+
         }
 
 
@@ -46,7 +53,11 @@ namespace AspPix.Controllers
             var item = await db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
-            var bigUri = CreateBigUri(ConstValue.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());
+            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
+
+
+
+            var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());
 
             var res = await _http.Http.GetAsync(bigUri, HttpCompletionOption.ResponseHeadersRead);
 

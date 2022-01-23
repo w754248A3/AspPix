@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using LinqToDB;
+using Microsoft.Extensions.Configuration;
 
 namespace AspPix.Controllers
 {
@@ -19,17 +20,22 @@ namespace AspPix.Controllers
     {
         private readonly PixImgGetHttp _http;
 
-        public ImgController(PixImgGetHttp http)
+        IConfiguration _con;
+
+        public ImgController(PixImgGetHttp http, IConfiguration configuration)
         {
             _http = http;
+
+            _con = configuration;
         }
 
-        static string[] CreatePath(string path, string path2)
+        static Uri[] CreatePath(Uri host, string path, string path2)
         {
-            return new string[]
+            return new Uri[]
             {
-                ConstValue.CLOUDFLARE_HOST + Fs.PixFunc.base64Decode(path),
-                ConstValue.CLOUDFLARE_HOST + Fs.PixFunc.base64Decode(path2)
+                new Uri(host, Fs.PixFunc.base64Decode(path)),
+
+                new Uri(host, Fs.PixFunc.base64Decode(path2)),
             };
         }
 
@@ -47,8 +53,9 @@ namespace AspPix.Controllers
                 return new FileContentResult(img.Img, MediaTypeNames.Image.Jpeg);
             }
 
+            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
 
-            foreach (var item in CreatePath(path, path2))
+            foreach (var item in CreatePath(info.CLOUDFLARE_HOST, path, path2))
             {
                 var res = await _http.Http.GetAsync(item, HttpCompletionOption.ResponseHeadersRead);
 

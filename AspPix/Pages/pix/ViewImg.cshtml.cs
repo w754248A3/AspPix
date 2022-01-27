@@ -10,11 +10,20 @@ using LinqToDB.Mapping;
 using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
 using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
+using Microsoft.Extensions.Configuration;
 
 namespace AspPix.Pages
 {
     public class ViewImgModel : PageModel
     {
+
+        IConfiguration _con;
+
+        public ViewImgModel(IConfiguration con)
+        {
+            _con = con;
+        }
+
         public string BigUri { get; set; }
 
         public IEnumerable<(string tag, string uri)> Src { get; set; }
@@ -38,7 +47,11 @@ namespace AspPix.Pages
         {
             const string HOST = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
 
-            using var db = Info.DbCreateFunc();
+            var info = _con.GetAspPixInfo();
+
+
+
+            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
 
             var item = await db.GetTable<PixivData>().FirstAsync(p => p.Id == id);
             BigUri = JsonSerializer.Serialize(

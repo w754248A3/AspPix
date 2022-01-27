@@ -47,14 +47,14 @@ namespace AspPix.Controllers
         {
             //"https://i.pximg.net/c/540x540_70/img-master/img/2020/04/24/22/48/16/81033008_p0_master1200.jpg"
 
-           
-            using var db = Info.DbCreateFunc();
+
+
+            var info = _con.GetAspPixInfo();
+
+
+            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
 
             var item = await db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
-
-
-            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
-
 
 
             var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());

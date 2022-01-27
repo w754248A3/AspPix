@@ -44,16 +44,18 @@ namespace AspPix.Controllers
         {
             //"https://i.pximg.net/c/540x540_70/img-master/img/2020/04/24/22/48/16/81033008_p0_master1200.jpg"
 
-            using var db = Info.DbCreateFunc();
 
-            var img = await db.GetTable<Info.PixImg>().Where(p => p.Id == id).FirstOrDefaultAsync();
+            var info = _con.GetAspPixInfo();
+
+
+            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
+
+            var img = await db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == id).FirstOrDefaultAsync();
 
             if (img is not null)
             {
                 return new FileContentResult(img.Img, MediaTypeNames.Image.Jpeg);
             }
-
-            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
 
             foreach (var item in CreatePath(info.CLOUDFLARE_HOST, path, path2))
             {
@@ -63,7 +65,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    db.InsertOrReplace(new Info.PixImg { Id = id, Img = by });
+                    db.InsertOrReplace(new Fs.PixSql.PixImg(id, by));
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

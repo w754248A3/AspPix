@@ -33,59 +33,65 @@ namespace AspPix
 {
     public static class Info
     {
-        public class PixImg
+       
+        public static DataConnection CreateDbConnect(string connectString)
         {
+            var db = new DataConnection(ProviderName.MySql, connectString)
+            {
+                CommandTimeout = 60 * 5
+            };
 
-            [PrimaryKey]
-            public int Id { get; set; }
 
-
-            public byte[] Img { get; set; }
+            return db;
         }
 
-        public static Func<DataConnection> DbCreateFunc { get; set; }
-
-        public static IEnumerable<string> CreateTags()
+        public static AspPixInfo GetAspPixInfo(this IConfiguration configuration)
         {
-            
-            var db = Info.DbCreateFunc();
-            
-            var data = DateTime.Now.AddDays(-7);
-
-            var pixiv2 = db.GetTable<PixivData>()
-                .Where(p => p.Date > data)
-                .OrderByDescending(p => p.Mark).Take(10000);
-
-            var hasTag = db.GetTable<PixivTagMap>()
-                .InnerJoin(pixiv2, (a, b) => a.ItemId == b.Id, (a, b) => a);
-
-
-
-            var tagId = db.GetTable<PixivTag>()
-                .InnerJoin(hasTag, (a, b) => a.Id == b.TagId, (a, b) => a)
-                .GroupBy(p => p.Id)
-                .Select(p => new { Id = p.Key, Count = p.Count() });
-
-
-
-
-            var tags = db.GetTable<PixivTag>()
-                .InnerJoin(tagId, (a, b) => a.Id == b.Id, (a, b) => new { a.Tag, a.Id, b.Count })
-                .OrderByDescending(p => p.Count)
-                .Take(150);
-
-
-            return tags.ToArray().Select(p => p.Tag).ToArray();
-
+            return configuration.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
         }
 
-        public static void Init()
+        public static AspPixInfo GetAspPixInfo(this IServiceProvider service)
         {
-            Configuration.ContinueOnCapturedContext = false;
-            Configuration.Linq.GuardGrouping = false;
-          
+            return service.GetRequiredService<IConfiguration>().GetAspPixInfo();
         }
+
+        //public static IEnumerable<string> CreateTags()
+        //{
+
+        //    var db = Info.DbCreateFunc();
+
+        //    var data = DateTime.Now.AddDays(-7);
+
+        //    var pixiv2 = db.GetTable<PixivData>()
+        //        .Where(p => p.Date > data)
+        //        .OrderByDescending(p => p.Mark).Take(10000);
+
+        //    var hasTag = db.GetTable<PixivTagMap>()
+        //        .InnerJoin(pixiv2, (a, b) => a.ItemId == b.Id, (a, b) => a);
+
+
+
+        //    var tagId = db.GetTable<PixivTag>()
+        //        .InnerJoin(hasTag, (a, b) => a.Id == b.TagId, (a, b) => a)
+        //        .GroupBy(p => p.Id)
+        //        .Select(p => new { Id = p.Key, Count = p.Count() });
+
+
+
+
+        //    var tags = db.GetTable<PixivTag>()
+        //        .InnerJoin(tagId, (a, b) => a.Id == b.Id, (a, b) => new { a.Tag, a.Id, b.Count })
+        //        .OrderByDescending(p => p.Count)
+        //        .Take(150);
+
+
+        //    return tags.ToArray().Select(p => p.Tag).ToArray();
+
+        //}
+
     }
+
+    
 
   
 
@@ -143,34 +149,19 @@ namespace AspPix
             AppDomain.CurrentDomain.UnhandledException += (obj, e) => Exit(e.ExceptionObject);
 
 
-            Info.Init();
+            Configuration.ContinueOnCapturedContext = false;
+            Configuration.Linq.GuardGrouping = false;
 
-            
+
+
             var host = CreateHostBuilder(args).Build();
 
-
-         
-            var con = host.Services.GetRequiredService<IConfiguration>();
-
-            var info = con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
-
-            Info.DbCreateFunc = () =>
-            {
-
-                var db = new DataConnection(
-                    ProviderName.MySql,
-                    info.DATA_BASE_CONNECT_STRING);
-
-
-                db.CommandTimeout = 60 * 5;
-
-
-                return db;
-            };
-
-            host.Start();
             
-            AspPix.Fs.PixCrawling.run(Info.DbCreateFunc, () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);          
+            host.Start();
+
+            var info = host.Services.GetAspPixInfo();
+
+            AspPix.Fs.PixCrawling.run(()=> Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING), () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);          
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

@@ -69,7 +69,9 @@ namespace AspPix.Pages
 
             Tag = tag ?? "";
 
-            using var db = Info.DbCreateFunc();
+            var info = _con.GetAspPixInfo();
+
+            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
 
             IQueryable<PixivData> query;
             if (onlylive == "on")
@@ -102,8 +104,6 @@ namespace AspPix.Pages
 
                 query = CreateQuery(db, query, id);
             }
-
-            var info = _con.GetSection(AspPixInfo.Key_Name).Get<AspPixInfo>();
 
             var items = await query
                 .OrderByDescending(item => item.Mark)

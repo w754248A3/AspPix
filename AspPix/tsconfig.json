@@ -5,7 +5,7 @@
     "removeComments": false,
     "sourceMap": false,
     "target": "es6",
-    "outDir": "wwwroot/js"
+    "outDir": "wwwroot/pix/js/"
   },
 
   "compileOnSave": true,

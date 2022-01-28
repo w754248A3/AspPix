@@ -127,13 +127,9 @@ namespace AspPix
             Process.GetCurrentProcess().Kill();
         }
         
-        static void Exit(object obj)
+        static void Exit(Exception e)
         {
-            Console.WriteLine(obj);
-
-            Debug.WriteLine(obj);
-
-            Debug.Flush();
+            Console.WriteLine($"Task类中有未观察到的异常 {e.GetType()}");
 
             KillSelf();
         }
@@ -145,9 +141,6 @@ namespace AspPix
             Console.CancelKeyPress += (obj, e) => KillSelf();
 
             TaskScheduler.UnobservedTaskException += (obj, e) => Exit(e.Exception);
-
-            AppDomain.CurrentDomain.UnhandledException += (obj, e) => Exit(e.ExceptionObject);
-
 
             Configuration.ContinueOnCapturedContext = false;
             Configuration.Linq.GuardGrouping = false;
@@ -166,13 +159,20 @@ namespace AspPix
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureLogging((log) => {
+                .ConfigureLogging((hostingContext, logging) =>
+                {
+                    logging.ClearProviders();
 
-                    log.ClearProviders();
+                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
 
-                    log.AddConsole();
-                    log.AddDebug();
+                    var logFolderPath = Path.Combine(basePath, "logs");
 
+                    Directory.CreateDirectory(logFolderPath);
+
+                    var path = Path.Combine(logFolderPath, "myapp-{Date}.txt");
+
+
+                    logging.AddFile(path);
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

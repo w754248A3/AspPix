@@ -143,21 +143,22 @@ module PixSql =
             |> Seq.map (fun d -> {Id = d.Value; Tag = d.Key})
             |> Seq.iter (fun v -> sert v)
 
-
-        let rec insetLoop(vs:Generic.List<PixivHtml>) =
-            //假如异常未完成，重新执行
-            try
-                inset(vs)
-            with
-            | :? MySql.Data.MySqlClient.MySqlException -> insetLoop(vs)
+        let isReRun(func:unit-> bool) = 
+            while func() do
+                ()
 
 
-        
         let loop() =
             while true do
                 let vs = loadCount()
-                insetLoop vs
-
+                
+                isReRun(fun () -> 
+                    try 
+                        inset(vs)
+                        false
+                    with 
+                    | :? MySql.Data.MySqlClient.MySqlException -> true)
+               
                 log $"{DateTime.Now}:DB:{vs.Last().pix.Id}"
 
 

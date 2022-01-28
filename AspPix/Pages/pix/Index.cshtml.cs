@@ -21,6 +21,8 @@ namespace AspPix.Pages
 
     public class IndexModel : PageModel
     {
+        public const string PATH = "Index";
+
         public record PixImgUri(string Small, string Big);
 
         readonly IConfiguration _con;
@@ -39,20 +41,32 @@ namespace AspPix.Pages
         public string Tag { get; set; }
 
         [FromQuery]
-        public string Date { get; set; }
+        public string DateLeft { get; set; }
 
         [FromQuery]
-        public string Date2 { get; set; }
+        public string DateRight { get; set; }
 
         [FromQuery]
         public string OnlyLive { get; set; }
 
         
-        public static string CreateQueryString(PixivData p)
+        public static string CreateSmallImgQueryString(PixivData p)
         {
-            //QueryHelpers.AddQueryString
+           
+            return QueryHelpers.AddQueryString("/pix/api/img",
+                new KeyValuePair<string, string>[] {
+                    KeyValuePair.Create("id", p.Id.ToString()),
+                    KeyValuePair.Create("path", Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
+                    KeyValuePair.Create("path2", Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
+                });
+        }
 
-            return $"/pix/api/img?id={p.Id}&path={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))}&path2={Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))}";
+        public static string CreateViewPageQueryString(PixivData p)
+        {
+            return QueryHelpers.AddQueryString("/pix/viewimg",
+               new KeyValuePair<string, string>[] {
+                    KeyValuePair.Create("id", p.Id.ToString()),
+               });
         }
 
         static IQueryable<PixivData> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<PixivData> pix, int tagid)
@@ -71,10 +85,8 @@ namespace AspPix.Pages
             IQueryable<PixivData> query;
             if ("on".Equals(OnlyLive, StringComparison.OrdinalIgnoreCase))
             {
-
                 query = db.GetTable<PixivData>()
                     .InnerJoin(db.GetTable<Fs.PixSql.PixLive>(), (a, b) => a.Id == b.Id, (a, b) => a);
-
             }
             else
             {
@@ -82,12 +94,12 @@ namespace AspPix.Pages
             }
              
 
-            if (DateTime.TryParse(Date, out var d))
+            if (DateTime.TryParse(DateLeft, out var d))
             {          
                 query = query.Where(p => p.Date >= d);
             }
 
-            if (DateTime.TryParse(Date2, out var d2)) 
+            if (DateTime.TryParse(DateRight, out var d2)) 
             {
                 query = query.Where(p => p.Date <= d2);
             }
@@ -102,11 +114,11 @@ namespace AspPix.Pages
 
             var items = await query
                 .OrderByDescending(item => item.Mark)
-                .Skip((int)(Pages * info.TAKE_SMALL_IMAGE))
+                .Skip(checked((int)(Pages * info.TAKE_SMALL_IMAGE)))
                 .Take(info.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
 
-            ImgUris = items.Select(item => new PixImgUri(CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
+            ImgUris = items.Select(item => new PixImgUri(CreateSmallImgQueryString(item), CreateViewPageQueryString(item))); 
         }
     }
 }

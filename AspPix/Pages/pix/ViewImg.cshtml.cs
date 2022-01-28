@@ -16,6 +16,9 @@ namespace AspPix.Pages
 {
     public class ViewImgModel : PageModel
     {
+        public const string PATH = "ViewImg";
+
+
 
         IConfiguration _con;
 

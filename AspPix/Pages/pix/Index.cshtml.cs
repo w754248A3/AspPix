@@ -17,21 +17,23 @@ namespace AspPix.Pages
 {
 
 
+    
+
     public class IndexModel : PageModel
     {
 
-        IConfiguration _con;
+        public record PixImgUri(string Small, string Big);
 
-        public IndexModel(IConfiguration configuration)
+        readonly IConfiguration _con;
+
+        public IndexModel(IConfiguration con)
         {
-            _con = configuration;
+            _con = con;
         }
 
-        public IEnumerable<(string small, string big)> Scrs { get; set; }
+        public IEnumerable<PixImgUri> ImgUris { get; set; }
 
         public uint Down { get; set; }
-
-        public IEnumerable<string> Tags { get; set; }
 
         public string Tag { get; set; }
         
@@ -59,8 +61,7 @@ namespace AspPix.Pages
         public async Task OnGetAsync(string tag, uint down, string date, string date2, string onlylive)
         {
 
-            Tags = Array.Empty<string>();
-
+          
             Down = down;
            
             Date = date ?? "";
@@ -113,7 +114,7 @@ namespace AspPix.Pages
 
             OnlyLive = onlylive;
 
-            Scrs = items.Select(item => (CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
+            ImgUris = items.Select(item => new PixImgUri(CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
         }
     }
 }

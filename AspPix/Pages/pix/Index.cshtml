@@ -13,22 +13,6 @@
         <form id="form" method="get">
             <label>仅喜欢</label>
             <input type="checkbox" name="onlylive" checked="@Model.OnlyLive"/>
-            <select id="select">
-                <option value="">All</option>
-                @foreach (var item in Model.Tags)
-                {
-                    if (Model.Tag == item)
-                    {
-                        <option value="@item" selected>@item</option>
-                    }
-                    else
-                    {
-                        <option value="@item">@item</option>
-                    }
-
-                }
-
-            </select>
             <input type="text" name="tag" id="tag" value="@Model.Tag" />
             <input type="button" id="reset" value="清除" />
             <input type="date" name="date" id="date" value="@Model.Date" />
@@ -39,9 +23,9 @@
         <button class="down">下一页</button>
     </div>
     <div>
-        @foreach (var item in Model.Scrs)
+        @foreach (var item in Model.ImgUris)
         {
-            <a href="@item.big" target="_blank"><my-img img-uri="@item.small"></my-img></a>
+            <a href="@item.Big" target="_blank"><my-img img-uri="@item.Small"></my-img></a>
         }
     </div>
     <div>

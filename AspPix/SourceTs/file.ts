@@ -11,8 +11,6 @@
 
         let tagInput = <HTMLInputElement>document.getElementById("tag");
 
-        let selectInput = <HTMLInputElement>document.getElementById("select");
-
         let resetButton = <HTMLInputElement>document.getElementById("reset");
 
         let dateInput = <HTMLInputElement>document.getElementById("date");
@@ -36,15 +34,7 @@
 
         tagInput.onchange = tagChange;
 
-        
-
-        selectInput.onchange = function () {
-
-            tagInput.value = selectInput.value;
-
-            tagChange();
-        };
-
+       
         dateInput.onchange = tagChange;
 
         date2Input.onchange = tagChange;

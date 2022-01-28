@@ -5,7 +5,6 @@
         let getForm = document.getElementById("form");
         let pageCount = document.getElementById("down");
         let tagInput = document.getElementById("tag");
-        let selectInput = document.getElementById("select");
         let resetButton = document.getElementById("reset");
         let dateInput = document.getElementById("date");
         let date2Input = document.getElementById("date2");
@@ -18,10 +17,6 @@
             date2Input.value = "";
         };
         tagInput.onchange = tagChange;
-        selectInput.onchange = function () {
-            tagInput.value = selectInput.value;
-            tagChange();
-        };
         dateInput.onchange = tagChange;
         date2Input.onchange = tagChange;
         function addButtonEvent(ie, func) {

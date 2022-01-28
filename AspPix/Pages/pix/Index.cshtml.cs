@@ -21,7 +21,6 @@ namespace AspPix.Pages
 
     public class IndexModel : PageModel
     {
-
         public record PixImgUri(string Small, string Big);
 
         readonly IConfiguration _con;
@@ -33,14 +32,19 @@ namespace AspPix.Pages
 
         public IEnumerable<PixImgUri> ImgUris { get; set; }
 
+        [FromQuery]
         public uint Pages { get; set; }
 
+        [FromQuery]
         public string Tag { get; set; }
-        
+
+        [FromQuery]
         public string Date { get; set; }
 
+        [FromQuery]
         public string Date2 { get; set; }
 
+        [FromQuery]
         public string OnlyLive { get; set; }
 
         
@@ -58,29 +62,14 @@ namespace AspPix.Pages
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
-        public async Task OnGetAsync(
-            [FromQuery(Name = nameof(Tag))] string tag,
-            [FromQuery(Name = nameof(Pages))] uint down,
-            [FromQuery(Name = nameof(Date))] string date,
-            [FromQuery(Name = nameof(Date2))] string date2,
-            [FromQuery(Name = nameof(OnlyLive))] string onlylive)
+        public async Task OnGetAsync()
         {
-
-          
-            Pages = down;
-           
-            Date = date ?? "";
-
-            Date2 = date2 ?? "";
-
-            Tag = tag ?? "";
-
             var info = _con.GetAspPixInfo();
 
             using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
 
             IQueryable<PixivData> query;
-            if (onlylive == "on")
+            if ("on".Equals(OnlyLive, StringComparison.OrdinalIgnoreCase))
             {
 
                 query = db.GetTable<PixivData>()
@@ -93,12 +82,12 @@ namespace AspPix.Pages
             }
              
 
-            if (DateTime.TryParse(date, out var d))
+            if (DateTime.TryParse(Date, out var d))
             {          
                 query = query.Where(p => p.Date >= d);
             }
 
-            if (DateTime.TryParse(date2, out var d2)) 
+            if (DateTime.TryParse(Date2, out var d2)) 
             {
                 query = query.Where(p => p.Date <= d2);
             }
@@ -106,7 +95,7 @@ namespace AspPix.Pages
 
             if (!string.IsNullOrWhiteSpace(Tag))
             {
-                var id = Fs.PixSql.getTagHash(tag);
+                var id = Fs.PixSql.getTagHash(Tag);
 
                 query = CreateQuery(db, query, id);
             }
@@ -116,8 +105,6 @@ namespace AspPix.Pages
                 .Skip((int)(Pages * info.TAKE_SMALL_IMAGE))
                 .Take(info.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
-
-            OnlyLive = onlylive;
 
             ImgUris = items.Select(item => new PixImgUri(CreateQueryString(item), "/pix/viewimg?id=" + item.Id));
         }

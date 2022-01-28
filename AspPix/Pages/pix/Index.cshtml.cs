@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using AspPix.Controllers;
 using PixivData = AspPix.Fs.PixSql.PixivData;
 using PixivTag = AspPix.Fs.PixSql.PixivTag;
 using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
@@ -55,9 +56,9 @@ namespace AspPix.Pages
            
             return QueryHelpers.AddQueryString("/pix/api/img",
                 new KeyValuePair<string, string>[] {
-                    KeyValuePair.Create("id", p.Id.ToString()),
-                    KeyValuePair.Create("path", Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
-                    KeyValuePair.Create("path2", Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
+                    KeyValuePair.Create(nameof(ImgController.Id), p.Id.ToString()),
+                    KeyValuePair.Create(nameof(ImgController.Path), Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
+                    KeyValuePair.Create(nameof(ImgController.Path2), Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
                 });
         }
 

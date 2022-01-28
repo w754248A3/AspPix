@@ -18,9 +18,9 @@ namespace AspPix.Controllers
     [ApiController]
     public class ImgController : ControllerBase
     {
-        private readonly PixImgGetHttp _http;
+        readonly PixImgGetHttp _http;
 
-        IConfiguration _con;
+        readonly IConfiguration _con;
 
         public ImgController(PixImgGetHttp http, IConfiguration configuration)
         {
@@ -39,8 +39,17 @@ namespace AspPix.Controllers
             };
         }
 
+        [FromQuery]
+        public string Path { get; set; }
+
+        [FromQuery]
+        public string Path2 { get; set; }
+
+        [FromQuery]
+        public int Id { get; set; }
+
         [HttpGet]
-        public async Task<ActionResult> Get([FromQuery] string path, [FromQuery] string path2, [FromQuery] int id)
+        public async Task<ActionResult> Get()
         {
             //"https://i.pximg.net/c/540x540_70/img-master/img/2020/04/24/22/48/16/81033008_p0_master1200.jpg"
 
@@ -50,14 +59,14 @@ namespace AspPix.Controllers
 
             using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
 
-            var img = await db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == id).FirstOrDefaultAsync();
+            var img = await db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == Id).FirstOrDefaultAsync();
 
             if (img is not null)
             {
                 return new FileContentResult(img.Img, MediaTypeNames.Image.Jpeg);
             }
 
-            foreach (var item in CreatePath(info.CLOUDFLARE_HOST, path, path2))
+            foreach (var item in CreatePath(info.CLOUDFLARE_HOST, Path, Path2))
             {
                 var res = await _http.Http.GetAsync(item, HttpCompletionOption.ResponseHeadersRead);
 
@@ -65,7 +74,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    db.InsertOrReplace(new Fs.PixSql.PixImg(id, by));
+                    db.InsertOrReplace(new Fs.PixSql.PixImg(Id, by));
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

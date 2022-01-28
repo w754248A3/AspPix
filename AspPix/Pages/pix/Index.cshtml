@@ -12,12 +12,12 @@
     <div>
         <form id="form" method="get">
             <label>仅喜欢</label>
-            <input type="checkbox" name="onlylive" checked="@Model.OnlyLive"/>
-            <input type="text" name="tag" id="tag" value="@Model.Tag" />
+            <input type="checkbox" name="@nameof(Model.OnlyLive)" checked="@Model.OnlyLive"/>
+            <input type="text" id="tag" name="@nameof(Model.Tag)" value="@Model.Tag" />
             <input type="button" id="reset" value="清除" />
-            <input type="date" name="date" id="date" value="@Model.Date" />
-            <input type="date" name="date2" id="date2" value="@Model.Date2" />
-            <input type="number" name="down" id="down" value="@Model.Down" />
+            <input type="date" id="date" name="@nameof(Model.Date)" value="@Model.Date" />
+            <input type="date" id="date2" name="@nameof(Model.Date2)" value="@Model.Date2" />
+            <input type="number" id="down" name="@nameof(Model.Pages)" value="@Model.Pages" />
         </form>
         <button class="up">上一页</button>
         <button class="down">下一页</button>

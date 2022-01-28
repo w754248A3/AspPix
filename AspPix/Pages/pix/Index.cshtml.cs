@@ -33,7 +33,7 @@ namespace AspPix.Pages
 
         public IEnumerable<PixImgUri> ImgUris { get; set; }
 
-        public uint Down { get; set; }
+        public uint Pages { get; set; }
 
         public string Tag { get; set; }
         
@@ -58,11 +58,16 @@ namespace AspPix.Pages
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
 
-        public async Task OnGetAsync(string tag, uint down, string date, string date2, string onlylive)
+        public async Task OnGetAsync(
+            [FromQuery(Name = nameof(Tag))] string tag,
+            [FromQuery(Name = nameof(Pages))] uint down,
+            [FromQuery(Name = nameof(Date))] string date,
+            [FromQuery(Name = nameof(Date2))] string date2,
+            [FromQuery(Name = nameof(OnlyLive))] string onlylive)
         {
 
           
-            Down = down;
+            Pages = down;
            
             Date = date ?? "";
 
@@ -108,7 +113,7 @@ namespace AspPix.Pages
 
             var items = await query
                 .OrderByDescending(item => item.Mark)
-                .Skip((int)(Down * info.TAKE_SMALL_IMAGE))
+                .Skip((int)(Pages * info.TAKE_SMALL_IMAGE))
                 .Take(info.TAKE_SMALL_IMAGE)
                 .ToArrayAsync();
 

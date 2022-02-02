@@ -10,9 +10,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using AspPix.Controllers;
-using PixivData = AspPix.Fs.PixSql.PixivData;
-using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix.Pages
 {
@@ -54,7 +51,7 @@ namespace AspPix.Pages
         public string OnlyLive { get; set; }
 
         
-        public static string CreateSmallImgQueryString(PixivData p)
+        public static string CreateSmallImgQueryString(Fs.PixSql.PixivData p)
         {
            
             return QueryHelpers.AddQueryString("/pix/api/img",
@@ -65,7 +62,7 @@ namespace AspPix.Pages
                 });
         }
 
-        public static string CreateViewPageQueryString(PixivData p)
+        public static string CreateViewPageQueryString(Fs.PixSql.PixivData p)
         {
             return QueryHelpers.AddQueryString("/pix/viewimg",
                new KeyValuePair<string, string>[] {
@@ -73,9 +70,9 @@ namespace AspPix.Pages
                });
         }
 
-        static IQueryable<PixivData> CreateQuery(LinqToDB.Data.DataConnection db, IQueryable<PixivData> pix, int tagid)
+        static IQueryable<Fs.PixSql.PixivData> CreateQuery(LinqToDB.Data.DataConnection _connection, IQueryable<Fs.PixSql.PixivData> pix, int tagid)
         {
-            var has = db.GetTable<PixivTagMap>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
+            var has = _connection.GetTable<Fs.PixSql.PixivTagMap>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
 
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
@@ -84,18 +81,15 @@ namespace AspPix.Pages
         {
             var info = _con.GetAspPixInfo();
 
-            using var db = _connection;
-
-
-            IQueryable<PixivData> query;
+            IQueryable<Fs.PixSql.PixivData> query;
             if ("on".Equals(OnlyLive, StringComparison.OrdinalIgnoreCase))
             {
-                query = db.GetTable<PixivData>()
-                    .InnerJoin(db.GetTable<Fs.PixSql.PixLive>(), (a, b) => a.Id == b.Id, (a, b) => a);
+                query = _connection.PixData
+                    .InnerJoin(_connection.PixLive, (a, b) => a.Id == b.Id, (a, b) => a);
             }
             else
             {
-                query = db.GetTable<PixivData>();
+                query = _connection.PixData;
             }
              
 
@@ -114,7 +108,7 @@ namespace AspPix.Pages
             {
                 var id = Fs.PixSql.getTagHash(Tag);
 
-                query = CreateQuery(db, query, id);
+                query = CreateQuery(_connection, query, id);
             }
 
             var items = await query

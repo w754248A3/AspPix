@@ -23,15 +23,17 @@ namespace AspPix.Controllers
     public class LiveController : ControllerBase
     {
 
-        private readonly PixImgGetHttp _http;
+        readonly PixImgGetHttp _http;
 
-        IConfiguration _con;
+        readonly IConfiguration _con;
 
-        public LiveController(PixImgGetHttp http, IConfiguration configuration)
+        readonly AppDataConnection _db;
+
+        public LiveController(PixImgGetHttp http, IConfiguration con, AppDataConnection db)
         {
             _http = http;
-
-            _con = configuration;
+            _con = con;
+            _db = db;
         }
 
         static Uri CreateBigUri(Uri host, string s)
@@ -51,10 +53,7 @@ namespace AspPix.Controllers
 
             var info = _con.GetAspPixInfo();
 
-
-            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
-
-            var item = await db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
+            var item = await _db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
             var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());
@@ -66,7 +65,7 @@ namespace AspPix.Controllers
                 var by = await res.Content.ReadAsByteArrayAsync();
 
 
-                db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));
+                _db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));
 
                 return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
             }

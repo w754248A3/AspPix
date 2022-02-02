@@ -7,9 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using LinqToDB;
 using LinqToDB.Mapping;
-using PixivData = AspPix.Fs.PixSql.PixivData;
-using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 using Microsoft.Extensions.Configuration;
 
 namespace AspPix.Pages
@@ -20,11 +17,14 @@ namespace AspPix.Pages
 
 
 
-        IConfiguration _con;
+        readonly IConfiguration _con;
 
-        public ViewImgModel(IConfiguration con)
+        readonly AppDataConnection _db;
+
+        public ViewImgModel(IConfiguration con, AppDataConnection db)
         {
             _con = con;
+            _db = db;
         }
 
         public string BigUri { get; set; }
@@ -52,18 +52,14 @@ namespace AspPix.Pages
 
             var info = _con.GetAspPixInfo();
 
-
-
-            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
-
-            var item = await db.GetTable<PixivData>().FirstAsync(p => p.Id == id);
+            var item = await _db.PixData.FirstAsync(p => p.Id == id);
             BigUri = JsonSerializer.Serialize(
              Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 50)
                 .Select(p => CreateBigUri(HOST, p))
                 .ToArray());
 
-            var tags = await db.GetTable<PixivTagMap>().Where(p => p.ItemId == id).Select(p => p.TagId)
-                .InnerJoin(db.GetTable<PixivTag>(), (left, right) => left == right.Id, (left, right) => right.Tag)
+            var tags = await _db.PixTagMap.Where(p => p.ItemId == id).Select(p => p.TagId)
+                .InnerJoin(_db.PixTag, (left, right) => left == right.Id, (left, right) => right.Tag)
                 .ToArrayAsync();
 
             static string func(string s)
@@ -79,7 +75,7 @@ namespace AspPix.Pages
 
             Src = tags.Select(p => (p, func(p)));
 
-            var c  = await db.GetTable<Fs.PixSql.PixLive>().Where(p => p.Id == id).CountAsync();
+            var c  = await _db.GetTable<Fs.PixSql.PixLive>().Where(p => p.Id == id).CountAsync();
 
             IsLive = c > 0 ? "Ï²»¶" : "²»Ï²»¶";
 

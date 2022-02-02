@@ -28,25 +28,11 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using PixivData = AspPix.Fs.PixSql.PixivData;
-using PixivTag = AspPix.Fs.PixSql.PixivTag;
-using PixivTagMap = AspPix.Fs.PixSql.PixivTagMap;
 
 namespace AspPix
 {
     public static class Info
     {
-       
-        public static DataConnection CreateDbConnect(string connectString)
-        {
-            var db = new DataConnection(ProviderName.MySql, connectString)
-            {
-                CommandTimeout = 60 * 5
-            };
-
-
-            return db;
-        }
 
         public static AspPixInfo GetAspPixInfo(this IConfiguration configuration)
         {
@@ -102,6 +88,17 @@ namespace AspPix
         {
 
         }
+
+
+
+        public ITable<Fs.PixSql.PixImg> PixImg => GetTable<Fs.PixSql.PixImg>();
+        public ITable<Fs.PixSql.PixivData> PixData => GetTable<Fs.PixSql.PixivData>();
+        public ITable<Fs.PixSql.PixivHtml> PixHtml => GetTable<Fs.PixSql.PixivHtml>();
+        public ITable<Fs.PixSql.PixivTag> PixTag => GetTable<Fs.PixSql.PixivTag>();
+        public ITable<Fs.PixSql.PixivTagMap> PixTagMap => GetTable<Fs.PixSql.PixivTagMap>();
+        public ITable<Fs.PixSql.PixLive> PixLive => GetTable<Fs.PixSql.PixLive>();
+
+
     }
 
 
@@ -164,7 +161,7 @@ namespace AspPix
 
             var info = host.Services.GetAspPixInfo();
 
-            AspPix.Fs.PixCrawling.run(()=> Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING), () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);          
+            AspPix.Fs.PixCrawling.run(() => host.Services.GetRequiredService<AppDataConnection>(), () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);        
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

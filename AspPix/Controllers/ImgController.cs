@@ -22,11 +22,13 @@ namespace AspPix.Controllers
 
         readonly IConfiguration _con;
 
-        public ImgController(PixImgGetHttp http, IConfiguration configuration)
+        readonly AppDataConnection _db;
+
+        public ImgController(PixImgGetHttp http, IConfiguration con, AppDataConnection db)
         {
             _http = http;
-
-            _con = configuration;
+            _con = con;
+            _db = db;
         }
 
         static Uri[] CreatePath(Uri host, string path, string path2)
@@ -56,10 +58,7 @@ namespace AspPix.Controllers
 
             var info = _con.GetAspPixInfo();
 
-
-            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
-
-            var img = await db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == Id).FirstOrDefaultAsync();
+            var img = await _db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == Id).FirstOrDefaultAsync();
 
             if (img is not null)
             {
@@ -74,7 +73,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    db.InsertOrReplace(new Fs.PixSql.PixImg(Id, by));
+                    _db.InsertOrReplace(new Fs.PixSql.PixImg(Id, by));
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

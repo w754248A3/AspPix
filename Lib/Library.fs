@@ -157,7 +157,9 @@ module PixSql =
                         inset(vs)
                         false
                     with 
-                    | :? MySql.Data.MySqlClient.MySqlException -> true)
+                    | :? MySql.Data.MySqlClient.MySqlException -> true
+                    | :? ObjectDisposedException -> true)
+
                
                 log $"{DateTime.Now}:DB:{vs.Last().pix.Id}"
 

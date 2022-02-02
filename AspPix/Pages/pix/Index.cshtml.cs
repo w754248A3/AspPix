@@ -28,9 +28,12 @@ namespace AspPix.Pages
 
         readonly IConfiguration _con;
 
-        public IndexModel(IConfiguration con)
+        readonly AppDataConnection _connection;
+
+        public IndexModel(IConfiguration con, AppDataConnection connection)
         {
             _con = con;
+            _connection = connection;
         }
 
         public IEnumerable<PixImgUri> ImgUris { get; set; }
@@ -81,7 +84,8 @@ namespace AspPix.Pages
         {
             var info = _con.GetAspPixInfo();
 
-            using var db = Info.CreateDbConnect(info.DATA_BASE_CONNECT_STRING);
+            using var db = _connection;
+
 
             IQueryable<PixivData> query;
             if ("on".Equals(OnlyLive, StringComparison.OrdinalIgnoreCase))

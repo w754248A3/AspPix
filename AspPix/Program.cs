@@ -1,5 +1,8 @@
 using LinqToDB;
+using LinqToDB.AspNet;
+using LinqToDB.AspNet.Logging;
 using LinqToDB.Common;
+using LinqToDB.Configuration;
 using LinqToDB.Data;
 using LinqToDB.Mapping;
 using Microsoft.AspNetCore.Builder;
@@ -91,9 +94,16 @@ namespace AspPix
 
     }
 
-    
 
-  
+    public class AppDataConnection : DataConnection
+    {
+        public AppDataConnection(LinqToDbConnectionOptions<AppDataConnection> options)
+            : base(options)
+        {
+
+        }
+    }
+
 
     public class AspPixInfo
     {
@@ -182,6 +192,15 @@ namespace AspPix
 
     public class Startup
     {
+
+
+        public IConfiguration _configuration;
+
+        public Startup(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
@@ -199,6 +218,14 @@ namespace AspPix
                 });
 
             services.AddTransient<Fs.PixCrawling.PixGetHtmlService>();
+
+           
+            services.AddLinqToDbContext<AppDataConnection>((provider, options) => {
+                options      
+                .UseMySql(_configuration.GetConnectionString("Default"))
+                .UseDefaultLogging(provider);
+            });
+          
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

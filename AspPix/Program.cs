@@ -5,6 +5,7 @@ using LinqToDB.Common;
 using LinqToDB.Configuration;
 using LinqToDB.Data;
 using LinqToDB.Mapping;
+using LinqToDB.Expressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -83,20 +84,20 @@ namespace AspPix
 
     public class AppDataConnection : DataConnection
     {
-        public AppDataConnection(LinqToDbConnectionOptions<AppDataConnection> options)
+        public AppDataConnection(LinqToDBConnectionOptions<AppDataConnection> options)
             : base(options)
         {
-
+            
         }
 
 
 
-        public ITable<Fs.PixSql.PixImg> PixImg => GetTable<Fs.PixSql.PixImg>();
-        public ITable<Fs.PixSql.PixivData> PixData => GetTable<Fs.PixSql.PixivData>();
-        public ITable<Fs.PixSql.PixivHtml> PixHtml => GetTable<Fs.PixSql.PixivHtml>();
-        public ITable<Fs.PixSql.PixivTag> PixTag => GetTable<Fs.PixSql.PixivTag>();
-        public ITable<Fs.PixSql.PixivTagMap> PixTagMap => GetTable<Fs.PixSql.PixivTagMap>();
-        public ITable<Fs.PixSql.PixLive> PixLive => GetTable<Fs.PixSql.PixLive>();
+        public ITable<Fs.PixSql.PixImg> PixImg => this.GetTable<Fs.PixSql.PixImg>();
+        public ITable<Fs.PixSql.PixivData> PixData => this.GetTable<Fs.PixSql.PixivData>();
+        public ITable<Fs.PixSql.PixivHtml> PixHtml => this.GetTable<Fs.PixSql.PixivHtml>();
+        public ITable<Fs.PixSql.PixivTag> PixTag => this.GetTable<Fs.PixSql.PixivTag>();
+        public ITable<Fs.PixSql.PixivTagMap> PixTagMap => this.GetTable<Fs.PixSql.PixivTagMap>();
+        public ITable<Fs.PixSql.PixLive> PixLive => this.GetTable<Fs.PixSql.PixLive>();
 
 
     }
@@ -217,7 +218,7 @@ namespace AspPix
             services.AddTransient<Fs.PixCrawling.PixGetHtmlService>();
 
            
-            services.AddLinqToDbContext<AppDataConnection>((provider, options) => {
+            services.AddLinqToDBContext<AppDataConnection>((provider, options) => {
                 options      
                 .UseMySql(_configuration.GetConnectionString("Default"))
                 .UseDefaultLogging(provider);

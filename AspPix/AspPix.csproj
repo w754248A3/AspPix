@@ -6,14 +6,9 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="3.6.0" />
-    <PackageReference Include="linq2db.AspNet" Version="3.6.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
-    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.4.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="MySql.Data" Version="8.0.27" />
+    <PackageReference Include="linq2db" Version="4.1.1" />
+    <PackageReference Include="linq2db.AspNet" Version="4.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="2.0.0" />
   </ItemGroup>
 

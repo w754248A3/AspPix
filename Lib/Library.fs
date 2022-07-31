@@ -67,108 +67,13 @@ module PixSql =
         tag:string[]
     }
 
+
     let getTagHash(tag:string) =
         tag
         |> Encoding.UTF8.GetBytes
         |> SHA256.HashData
         |> fun v -> 
             BitConverter.ToInt32(v,0)
-
-    let runInsetDb count (createDb:unit -> DataConnection) (reader:ChannelReader<PixivHtml>) (log:string-> unit) =
-        
-
-        let loadCount() =
-            let vs = Generic.List<PixivHtml>()
-
-            
-            while vs.Count <> count do
-                let mutable v = Unchecked.defaultof<PixivHtml>
-
-                while reader.TryRead(&v) = false do
-                    Thread.Sleep(TimeSpan(0,0,5))
-                
-                vs.Add(v)
-
-            vs
-
-        let inset(vs:Generic.List<PixivHtml>) = 
-            
-            
-                    
-            let createPixTagHas (dic:Generic.Dictionary<string,int>) (vs:Generic.List<PixivHtml>)  =
-                let createTagHash id tags =                    
-                    let setdic tag =
-                        let mutable v = Unchecked.defaultof<int>
-                    
-                        if dic.TryGetValue(tag, &v) then
-                            v
-                        else
-                            let c = getTagHash(tag)
-                            dic.Add(tag, c)
-                            c                   
-                    tags
-                    |> Array.toSeq
-                    |> Seq.map (fun v -> {ItemId = id; TagId = setdic v})
-                vs
-                |> Seq.map (fun p -> createTagHash p.pix.Id p.tag)
-                |> Seq.concat
-
-            
-            use db = createDb()
-
-            
-            let sert v =
-                try
-                    db.Insert(v) |> ignore
-                    ()
-                with
-                | :? MySql.Data.MySqlClient.MySqlException as e when e.Message.StartsWith("Duplicate entry") -> ()
-              
-
-            let sertRe v =
-                db.InsertOrReplace(v) |> ignore
-                ()
-
-            vs 
-            |> Seq.map (fun p -> p.pix)
-            |> Seq.iter (fun v -> sertRe(v))
-
-            let dic = Generic.Dictionary<string,int>()
-            
-            vs
-            |> createPixTagHas dic
-            |> Seq.iter (fun v -> sert v)
-
-            dic 
-            |> Seq.map (fun d -> {Id = d.Value; Tag = d.Key})
-            |> Seq.iter (fun v -> sert v)
-
-        let isReRun(func:unit-> bool) = 
-            while func() do
-                ()
-
-
-        let loop() =
-            while true do
-                let vs = loadCount()
-                
-                isReRun(fun () -> 
-                    try 
-                        inset(vs)
-                        false
-                    with 
-                    | :? MySql.Data.MySqlClient.MySqlException -> true
-                    | :? ObjectDisposedException -> true)
-
-               
-                log $"{DateTime.Now}:DB:{vs.Last().pix.Id}"
-
-
-        loop();
-
-
-
-
 
 module PixParse =
     let asDateTimeFromUri (uri:Uri) =
@@ -459,10 +364,9 @@ module PixCrawling =
         Http:PixGetHtmlHttp
     }
 
-    let run(createDb:Func<DataConnection>) (get:Func<PixGetHtmlService>) baseUri referer =
+    let run (get:Func<PixGetHtmlService>) baseUri referer =
         
-        let db = fun () -> createDb.Invoke()
-
+        
         let http = fun (n) -> PixHTTP.createGetHTMLFunc (get.Invoke().Http.Http) n baseUri referer
 
         let ch = Channel.CreateBounded<PixSql.PixivHtml>(100)
@@ -499,7 +403,10 @@ module PixCrawling =
         one "7" (fun () -> (DateTime.Now.AddDays(-8.0))) (fun e -> sevendaylog <- e) |> ignore
         one "30" (fun () -> (DateTime.Now.AddDays(-30.0))) (fun e -> moondaylog <- e) |> ignore
 
-        PixSql.runInsetDb 1000 db ch.Reader (fun e-> dblog <- e)
+        //PixLoad.runLoad "1" 99000000 http ch.Writer (fun e-> onedaylog <- e) |> ignore
+
+        ch.Reader
+
         
 
 

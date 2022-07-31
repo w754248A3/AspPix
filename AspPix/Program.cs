@@ -121,15 +121,180 @@ namespace AspPix
 
         public int TAKE_SMALL_IMAGE { get; set; }
 
-
-        public string DATA_BASE_CONNECT_STRING { get; set; }
     }
 
 
     public record PixImgGetHttp(HttpClient Http);
 
+    public static class IntoSqlite
+    {
+        static TempTable<T> CreateTemp<T>(DataConnection db, string name) where T: class
+        {
+
+            db.DropTable<T>(tableName:name, tableOptions: TableOptions.DropIfExists);
+
+            return db.CreateTempTable<T>(tableName: name);
+        }
+
+        static void Into<T>(IQueryable<T> query, DataConnection db, Action<TempTable<T>> action) where T : class
+        {
+            using var temp = CreateTemp<T>(db, "3828A8BD-85C0-4BFB-B41E-F9934D4013C4");
+
+
+            temp.BulkCopy(query);
+
+
+            action(temp);
+
+        }
+
+        static void InsertData(List<Fs.PixSql.PixivHtml> vs, DataConnection db)
+        {
+          
+           
+            using var temp = CreateTemp<Fs.PixSql.PixivData>(db, "A004C88C-0518-4A21-B8CC-6316C8523439");
+
+            temp.BulkCopy(vs.Select(p => p.pix));
+
+            var query = temp
+                .LeftJoin(db.GetTable<Fs.PixSql.PixivData>(), (a, b) => a.Id == b.Id, (a, b) => new { a, b });
+
+            Into(
+                query.Where(p => p.b == null).Select(p => p.a),
+                db,
+                p => p.Insert(db.GetTable<Fs.PixSql.PixivData>(), p => p));
+
+            Into(
+                query.Where(p => p.b != null).Select(p => p.a),
+                db,
+                p =>
+                {
+                    p.InnerJoin(db.GetTable<Fs.PixSql.PixivData>(), (a, b) => a.Id == b.Id, (a, b) => a)
+                    .Update(db.GetTable<Fs.PixSql.PixivData>(), p => p);
+
+
+                });
+
+            
+
+        }
+      
+        static void InsertTag(List<Fs.PixSql.PixivHtml> vs, DataConnection db)
+        {
+            var dic = new Dictionary<string, int>();
+
+            var ie = vs.SelectMany(p =>
+            {
+                return p.tag.Select(tag =>
+                {
+                    if (!dic.TryGetValue(tag, out var tagID))
+                    {
+                        tagID = Fs.PixSql.getTagHash(tag);
+
+                        dic[tag] = tagID;
+
+                    }
+
+                    return new Fs.PixSql.PixivTagMap(p.pix.Id, tagID);
+
+                });
+            });
+
+
+            void InMap()
+            {
+                using var temp = CreateTemp<Fs.PixSql.PixivTagMap>(db, "18A7579E-A10A-4BC2-A698-F61BAEA36F7F");
+
+
+                temp.BulkCopy(ie);
+
+                var query = temp.LeftJoin(
+                    db.GetTable<Fs.PixSql.PixivTagMap>(),
+                    (a, b) => a.ItemId == b.ItemId && a.TagId == b.TagId,
+                    (a, b) => new { a, b })
+                    .Where(p => p.b == null)
+                    .Select(p => p.a);
+
+
+
+                Into(query, db, p => p.Insert(db.GetTable<Fs.PixSql.PixivTagMap>(), p => p));
+
+
+            }
+
+            void InTag()
+            {
+                using var temp = CreateTemp<Fs.PixSql.PixivTag>(db, "18A7579E-A10A-4BC2-A698-F61BAEA36F7F");
+
+
+                temp.BulkCopy(dic.Select(p => new Fs.PixSql.PixivTag(p.Value, p.Key)));
+
+                var query = temp.LeftJoin(
+                    db.GetTable<Fs.PixSql.PixivTag>(),
+                    (a, b) => a.Id == b.Id,
+                    (a, b) => new { a, b })
+                    .Where(p => p.b == null)
+                    .Select(p => p.a);
+
+
+
+                Into(query, db, p => p.Insert(db.GetTable<Fs.PixSql.PixivTag>(), p => p));
+
+
+            }
+
+            InMap();
+
+            InTag();
+
+        }
+
+        static void Insert(List<Fs.PixSql.PixivHtml> vs, DataConnection db)
+        {
+            using var ts = db.BeginTransaction();
+
+            InsertData(vs, db);
+
+            InsertTag(vs, db);
+
+            ts.Commit();
+        }
+
+        public static void Run(int count, Func<DataConnection> func, ChannelReader<Fs.PixSql.PixivHtml> reader)
+        {
+            var vs = new List<Fs.PixSql.PixivHtml>();
+
+            while (true)
+            {
+                if (reader.TryRead(out var v))
+                {
+                    vs.Add(v);
+
+
+                    if (vs.Count >= count)
+                    {
+                        Insert(vs, func());
+
+                        vs = new List<Fs.PixSql.PixivHtml>();
+                    }
+
+                }
+                else
+                {
+                    Thread.Sleep(new TimeSpan(0, 0, 5));
+                }
+            }
+        }
+
+       
+
+    }
+
     public class Program
     {
+        [DllImport("kernel32.dll")]
+        static extern bool FreeConsole();
+
         static void KillSelf()
         {
             Process.GetCurrentProcess().Kill();
@@ -144,6 +309,10 @@ namespace AspPix
 
         public static void Main(string[] args)
         {
+            
+            args = new string[] { "--urls=http://127.0.0.1:80/" };
+
+
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             Console.CancelKeyPress += (obj, e) => KillSelf();
@@ -156,13 +325,27 @@ namespace AspPix
 
 
             var host = CreateHostBuilder(args).Build();
+            var db = host.Services.GetRequiredService<AppDataConnection>();
 
-            
+            db.CreateTable<Fs.PixSql.PixImg>(tableOptions:TableOptions.CreateIfNotExists);
+            db.CreateTable<Fs.PixSql.PixivData>(tableOptions: TableOptions.CreateIfNotExists);
+            db.CreateTable<Fs.PixSql.PixivTagMap>(tableOptions: TableOptions.CreateIfNotExists);
+            db.CreateTable<Fs.PixSql.PixLive>(tableOptions: TableOptions.CreateIfNotExists);
+            db.CreateTable<Fs.PixSql.PixivTag>(tableOptions: TableOptions.CreateIfNotExists);
+
             host.Start();
 
             var info = host.Services.GetAspPixInfo();
 
-            AspPix.Fs.PixCrawling.run(() => host.Services.GetRequiredService<AppDataConnection>(), () => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);        
+            var reader = AspPix.Fs.PixCrawling.run(() => host.Services.GetRequiredService<Fs.PixCrawling.PixGetHtmlService>(), info.BASEURI, info.REFERER.AbsoluteUri);
+
+
+            FreeConsole();
+
+            IntoSqlite.Run(1000, () => host.Services.GetRequiredService<AppDataConnection>(), reader);
+            
+
+
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -171,7 +354,7 @@ namespace AspPix
                 {
                     logging.ClearProviders();
 
-                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                    var basePath = @"D:\";
 
                     var logFolderPath = Path.Combine(basePath, "logs");
 
@@ -220,7 +403,7 @@ namespace AspPix
            
             services.AddLinqToDBContext<AppDataConnection>((provider, options) => {
                 options      
-                .UseMySql(_configuration.GetConnectionString("Default"))
+                .UseSQLiteMicrosoft(_configuration.GetConnectionString("Default"))
                 .UseDefaultLogging(provider);
             });
           

@@ -121,6 +121,10 @@ namespace AspPix
 
         public int TAKE_SMALL_IMAGE { get; set; }
 
+        public string CONNECT_STRING { get; set; }
+
+
+        public string LOGS_PATH { get; set; }
     }
 
 
@@ -189,7 +193,7 @@ namespace AspPix
                 {
                     if (!dic.TryGetValue(tag, out var tagID))
                     {
-                        tagID = Fs.PixSql.getTagHash(tag);
+                        tagID = StaticFunction.GetTagHash(tag);
 
                         dic[tag] = tagID;
 
@@ -307,6 +311,8 @@ namespace AspPix
             KillSelf();
         }
 
+      
+
         public static void Main(string[] args)
         {
             
@@ -354,13 +360,11 @@ namespace AspPix
                 {
                     logging.ClearProviders();
 
-                    var basePath = @"D:\";
+                    
 
-                    var logFolderPath = Path.Combine(basePath, "logs");
-
-                    Directory.CreateDirectory(logFolderPath);
-
-                    var path = Path.Combine(logFolderPath, "myapp-{Date}.txt");
+                    var path = Path.Combine(
+                        hostingContext.Configuration.GetAspPixInfo().LOGS_PATH,
+                        "myapp-{Date}.txt");
 
 
                     logging.AddFile(path);
@@ -402,8 +406,8 @@ namespace AspPix
 
            
             services.AddLinqToDBContext<AppDataConnection>((provider, options) => {
-                options      
-                .UseSQLiteMicrosoft(_configuration.GetConnectionString("Default"))
+                options
+                .UseSQLiteMicrosoft(_configuration.GetAspPixInfo().CONNECT_STRING)
                 .UseDefaultLogging(provider);
             });
           
@@ -423,6 +427,30 @@ namespace AspPix
 
                 endpoints.MapControllers();
             });
+        }
+    }
+
+
+    public static class StaticFunction
+    {
+        public static string Base64Encode(string text)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+        }
+
+        public static string Base64Decode(string text)
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(text));
+        }
+
+        public static int GetTagHash(string tag)
+        {
+            byte[] buff = Encoding.UTF8.GetBytes(tag);
+
+            byte[] hash = SHA256.HashData(buff);
+
+            return BitConverter.ToInt32(hash, 0);
+
         }
     }
 }

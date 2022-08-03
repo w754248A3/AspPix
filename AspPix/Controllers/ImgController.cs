@@ -35,9 +35,9 @@ namespace AspPix.Controllers
         {
             return new Uri[]
             {
-                new Uri(host, Fs.PixFunc.base64Decode(path)),
+                new Uri(host, StaticFunction.Base64Decode(path)),
 
-                new Uri(host, Fs.PixFunc.base64Decode(path2)),
+                new Uri(host, StaticFunction.Base64Decode(path2)),
             };
         }
 

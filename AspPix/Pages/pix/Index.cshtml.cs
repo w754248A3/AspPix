@@ -57,8 +57,8 @@ namespace AspPix.Pages
             return QueryHelpers.AddQueryString("/pix/api/img",
                 new KeyValuePair<string, string>[] {
                     KeyValuePair.Create(nameof(ImgController.Id), p.Id.ToString()),
-                    KeyValuePair.Create(nameof(ImgController.Path), Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
-                    KeyValuePair.Create(nameof(ImgController.Path2), Fs.PixFunc.base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
+                    KeyValuePair.Create(nameof(ImgController.Path), StaticFunction.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
+                    KeyValuePair.Create(nameof(ImgController.Path2), StaticFunction.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
                 });
         }
 
@@ -106,7 +106,7 @@ namespace AspPix.Pages
 
             if (!string.IsNullOrWhiteSpace(Tag))
             {
-                var id = Fs.PixSql.getTagHash(Tag);
+                var id = StaticFunction.GetTagHash(Tag);
 
                 query = CreateQuery(_connection, query, id);
             }

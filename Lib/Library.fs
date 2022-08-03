@@ -67,14 +67,6 @@ module PixSql =
         tag:string[]
     }
 
-
-    let getTagHash(tag:string) =
-        tag
-        |> Encoding.UTF8.GetBytes
-        |> SHA256.HashData
-        |> fun v -> 
-            BitConverter.ToInt32(v,0)
-
 module PixParse =
     let asDateTimeFromUri (uri:Uri) =
         let n (s:string) = Int32.Parse(s.Trim('/'))
@@ -408,19 +400,4 @@ module PixCrawling =
         ch.Reader
 
         
-
-
-
-module PixFunc =
-
-    let base64Encode (text:string) =
-        text
-        |> Encoding.UTF8.GetBytes
-        |> Convert.ToBase64String
-
-    let base64Decode (text:string) =
-        text
-        |> Convert.FromBase64String
-        |> Encoding.UTF8.GetString
-
 

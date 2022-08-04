@@ -54,7 +54,7 @@ namespace AspPix.Pages
 
             var item = await _db.PixData.FirstAsync(p => p.Id == id);
             BigUri = JsonSerializer.Serialize(
-             Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 50)
+             DataParse.GetImgUri(item, 50)
                 .Select(p => CreateBigUri(HOST, p))
                 .ToArray());
 
@@ -75,7 +75,7 @@ namespace AspPix.Pages
 
             Src = tags.Select(p => (p, func(p)));
 
-            var c  = await _db.GetTable<Fs.PixSql.PixLive>().Where(p => p.Id == id).CountAsync();
+            var c  = await _db.GetTable<PixLive>().Where(p => p.Id == id).CountAsync();
 
             IsLive = c > 0 ? "Ï²»¶" : "²»Ï²»¶";
 

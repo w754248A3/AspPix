@@ -19,10 +19,6 @@
     <Folder Include="wwwroot\pix\js\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Lib\Lib.fsproj" />
-  </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="Xcopy /y /E $(ProjectDir)wwwroot $(OutDir)wwwroot" />
   </Target>

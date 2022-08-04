@@ -51,18 +51,18 @@ namespace AspPix.Pages
         public string OnlyLive { get; set; }
 
         
-        public static string CreateSmallImgQueryString(Fs.PixSql.PixivData p)
+        public static string CreateSmallImgQueryString(PixivData p)
         {
            
             return QueryHelpers.AddQueryString("/pix/api/img",
                 new KeyValuePair<string, string>[] {
                     KeyValuePair.Create(nameof(ImgController.Id), p.Id.ToString()),
-                    KeyValuePair.Create(nameof(ImgController.Path), StaticFunction.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, false))),
-                    KeyValuePair.Create(nameof(ImgController.Path2), StaticFunction.Base64Encode(Fs.PixParse.getImgUriSmall(p.Date, p.Id, true))),
+                    KeyValuePair.Create(nameof(ImgController.Path), StaticFunction.Base64Encode(DataParse.GetSmallImgUri(p, false))),
+                    KeyValuePair.Create(nameof(ImgController.Path2), StaticFunction.Base64Encode(DataParse.GetSmallImgUri(p, true))),
                 });
         }
 
-        public static string CreateViewPageQueryString(Fs.PixSql.PixivData p)
+        public static string CreateViewPageQueryString(PixivData p)
         {
             return QueryHelpers.AddQueryString("/pix/viewimg",
                new KeyValuePair<string, string>[] {
@@ -70,9 +70,9 @@ namespace AspPix.Pages
                });
         }
 
-        static IQueryable<Fs.PixSql.PixivData> CreateQuery(LinqToDB.Data.DataConnection _connection, IQueryable<Fs.PixSql.PixivData> pix, int tagid)
+        static IQueryable<PixivData> CreateQuery(LinqToDB.Data.DataConnection _connection, IQueryable<PixivData> pix, int tagid)
         {
-            var has = _connection.GetTable<Fs.PixSql.PixivTagMap>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
+            var has = _connection.GetTable<PixivTagMap>().Where(p => p.TagId == tagid).Select(p => p.ItemId);
 
             return pix.InnerJoin(has, (left, right) => left.Id == right, (left, right) => left);
         }
@@ -81,7 +81,7 @@ namespace AspPix.Pages
         {
             var info = _con.GetAspPixInfo();
 
-            IQueryable<Fs.PixSql.PixivData> query;
+            IQueryable<PixivData> query;
             if ("on".Equals(OnlyLive, StringComparison.OrdinalIgnoreCase))
             {
                 query = _connection.PixData

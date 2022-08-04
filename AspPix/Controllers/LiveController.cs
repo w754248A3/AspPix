@@ -53,10 +53,10 @@ namespace AspPix.Controllers
 
             var info = _con.GetAspPixInfo();
 
-            var item = await _db.GetTable<AspPix.Fs.PixSql.PixivData>().Where(p => p.Id == id).FirstAsync();
+            var item = await _db.GetTable<AspPix.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
-            var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, Fs.PixParse.getImgUri(item.Date, item.Id, item.Flags, 1).First());
+            var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, DataParse.GetImgUri(item, 1).First());
 
             var res = await _http.Http.GetAsync(bigUri, HttpCompletionOption.ResponseHeadersRead);
 
@@ -65,7 +65,7 @@ namespace AspPix.Controllers
                 var by = await res.Content.ReadAsByteArrayAsync();
 
 
-                _db.InsertOrReplace(new Fs.PixSql.PixLive(item.Id, by));
+                _db.InsertOrReplace(new PixLive { Id = item.Id, Img = by });
 
                 return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
             }

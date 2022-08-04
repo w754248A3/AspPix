@@ -58,7 +58,7 @@ namespace AspPix.Controllers
 
             var info = _con.GetAspPixInfo();
 
-            var img = await _db.GetTable<Fs.PixSql.PixImg>().Where(p => p.Id == Id).FirstOrDefaultAsync();
+            var img = await _db.GetTable<PixImg>().Where(p => p.Id == Id).FirstOrDefaultAsync();
 
             if (img is not null)
             {
@@ -73,7 +73,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    _db.InsertOrReplace(new Fs.PixSql.PixImg(Id, by));
+                    _db.InsertOrReplace(new PixImg { Id = Id, Img = by });
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

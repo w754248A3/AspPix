@@ -42,8 +42,8 @@ namespace AspPix
             });
 
             services.AddTransient<PixGetHtmlService>();
-            services.AddTransient<PixCrawling>();
-            services.AddTransient<IntoSqlite>();
+            services.AddTransient<PixCrawlingService>();
+            services.AddTransient<IntoSqliteService>();
 
         }
 

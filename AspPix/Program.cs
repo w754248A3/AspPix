@@ -168,18 +168,17 @@ namespace AspPix
 
             var host = CreateHostBuilder(args).Build();
 
-            LogExit.Init();
+
             DataParse.Init();
             InitDataBaseTable(host);
 
             host.Start();
 
-            var http = host.Services.GetRequiredService<PixCrawling>();
+            var http = host.Services.GetRequiredService<PixCrawlingService>();
+            var info = host.Services.GetAspPixInfo();
+            var reader = http.Run(info.BASEURI, info.REFERER.AbsoluteUri);
 
-            var reader = http.Run();
-
-            var into = host.Services.GetRequiredService<IntoSqlite>();
-
+            var into = host.Services.GetRequiredService<IntoSqliteService>();
 
             into.Run(10, reader);
 

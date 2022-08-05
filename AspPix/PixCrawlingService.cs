@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace AspPix
 {
-    public sealed class PixCrawling
+    public sealed class PixCrawlingService
     {
-        private readonly HttpClient _http;
+        readonly HttpClient _http;
 
-        private readonly ILogger _logger;
+        readonly ILogger _logger;
 
-        public PixCrawling(PixGetHtmlHttp http, ILogger<PixCrawling> logger)
+        public PixCrawlingService(PixGetHtmlHttp http, ILogger<PixCrawlingService> logger)
         {
             _http = http.Http;
 
@@ -73,27 +73,27 @@ namespace AspPix
         }
 
         
-        public ChannelReader<PixivHtml> Run()
+        public ChannelReader<PixivHtml> Run(Uri baseUri, string referer)
         {
             var loadHtml = MyHttp.CreateLoadHtmlFunc(_http);
 
-            var channel = Channel.CreateBounded<PixivHtml>(100);
+            var channel = Channel.CreateBounded<PixivHtml>(1000);
             
             void RunLoopLoad(Func<int,int> nextId)
             {
-                Task.Run(async () =>
+                Task.Run(() => LogExit.OnErrorExitAsync(nameof(PixCrawlingService), _logger, async () =>
                 {
                     while (true)
                     {
                         var id = await GetMaxId(loadHtml).ConfigureAwait(false);
-                        Uri baseUri = new("http://www.pixiv.net/artworks/");
+                      
                         await Load(
                             0,
                             () => { id = nextId(id); return id; },
-                            (n) => loadHtml(new Uri(baseUri, n.ToString()), "https://www.pixivision.net"),
+                            (n) => loadHtml(new Uri(baseUri, n.ToString()), referer),
                             channel.Writer).ConfigureAwait(false);
-                    }                    
-                });
+                    }
+                }));  
             }
 
             RunLoopLoad((n) => n - 1);

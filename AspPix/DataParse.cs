@@ -15,16 +15,13 @@ namespace AspPix
 
             string[] args = uri.Segments;
 
-            return LogExit.OnErrorExit(nameof(GetDateTimeFromUri), () =>
-            {
-                int year = getNumber(args[3]);
-                int month = getNumber(args[4]);
-                int day = getNumber(args[5]);
-                int hour = getNumber(args[6]);
-                int minute = getNumber(args[7]);
-                int second = getNumber(args[8]);
-                return new DateTime(year, month, day, hour, minute, second);
-            });
+            int year = getNumber(args[3]);
+            int month = getNumber(args[4]);
+            int day = getNumber(args[5]);
+            int hour = getNumber(args[6]);
+            int minute = getNumber(args[7]);
+            int second = getNumber(args[8]);
+            return new DateTime(year, month, day, hour, minute, second);
         }
 
 
@@ -82,23 +79,13 @@ namespace AspPix
 
         public static int GetMarkCount(string html)
         {
-            return LogExit.OnErrorExit(nameof(GetMarkCount), () =>
-            {
-                return int.Parse(_mark.Match(html).Groups[1].Value);
-            });
+            return int.Parse(_mark.Match(html).Groups[1].Value);
 
-
-            
         }
 
         public static Uri GetUri(string html)
         {
-            return LogExit.OnErrorExit(nameof(GetUri), () =>
-            {
-                return new Uri(_original.Match(html).Groups[1].Value);
-            });
-
-
+            return new Uri(_original.Match(html).Groups[1].Value);
         }
 
         public static int GetIsJpg(Uri uri)
@@ -117,21 +104,16 @@ namespace AspPix
                     .ToArray();
             }
 
+            Match m = _tags.Match(html);
 
-            return LogExit.OnErrorExit(nameof(GetTag), () =>
+            if (m.Success)
             {
-                Match m = _tags.Match(html);
-
-                if (m.Success)
-                {
-                    return GetArray(m.Groups[1].Value);
-                }
-                else
-                {
-                    return Array.Empty<string>();
-                }
-             
-            });
+                return GetArray(m.Groups[1].Value);
+            }
+            else
+            {
+                return Array.Empty<string>();
+            }
         }
 
         public static PixivHtml CreatePD(string html, int id)

@@ -44,14 +44,13 @@ namespace AspPix
         }
 
 
-        public static IEnumerable<string> GetImgUri(PixivData pd, int count)
+        public static string[] GetImgUri(string host, PixivData pd)
         {
-            string ex = pd.Flags == 0 ? "jpg" : "png";
+            string ex = pd.Flags == 0 ? ".jpg" : ".png";
 
             string path = GetPathFromDateTime(pd.Date);
 
-            return Enumerable.Range(0, count)
-                .Select(n => $"/img-original/img/{path}/{pd.Id}_p{n}.{ex}");
+            return new string[] { $"{host}/img-original/img/{path}/{pd.Id}_p", ex };
         }
 
         public static string GetSmallImgUri(PixivData pd, bool b)

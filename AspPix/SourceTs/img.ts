@@ -7,15 +7,11 @@
         let vs = JSON.parse(imgDiv.getAttribute("my"));
 
 
-        function as() {
-
-        }
-
-        function addImg(vs: string[]) {
+        function addImg(vs: string[], n: number) {
 
             if (vs.length !== 0) {
 
-                let uri = vs.shift();
+                let uri = vs[0] + n + vs[1];
 
                 let img = document.createElement("img");
 
@@ -23,7 +19,7 @@
 
                     if (img.width !== 0 && img.height !== 0) {
                         imgDiv.appendChild(img);
-                        addImg(vs);
+                        addImg(vs, n + 1);
                     }
                 };
 
@@ -33,6 +29,6 @@
             }
         }
 
-        addImg(vs);
+        addImg(vs, 0);
     });
 })();

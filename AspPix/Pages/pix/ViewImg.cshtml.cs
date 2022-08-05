@@ -53,10 +53,7 @@ namespace AspPix.Pages
             var info = _con.GetAspPixInfo();
 
             var item = await _db.PixData.FirstAsync(p => p.Id == id);
-            BigUri = JsonSerializer.Serialize(
-             DataParse.GetImgUri(item, 50)
-                .Select(p => CreateBigUri(HOST, p))
-                .ToArray());
+            BigUri = JsonSerializer.Serialize(DataParse.GetImgUri(HOST, item));
 
             var tags = await _db.PixTagMap.Where(p => p.ItemId == id).Select(p => p.TagId)
                 .InnerJoin(_db.PixTag, (left, right) => left == right.Id, (left, right) => right.Tag)

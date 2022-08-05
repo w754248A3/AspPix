@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using LinqToDB;
 using LinqToDB.Mapping;
@@ -53,12 +55,24 @@ namespace AspPix.Pages
         
         public static string CreateSmallImgQueryString(PixivData p)
         {
-           
+
+            SmallImgUriArray v = new()
+            {
+                Id = p.Id,
+
+                Uris = new string[]
+                {
+                    DataParse.GetSmallImgUri(p, false),
+                    DataParse.GetSmallImgUri(p, true)
+                }
+            };
+
+            var json = JsonSerializer.Serialize(v);
+
+
             return QueryHelpers.AddQueryString("/pix/api/img",
                 new KeyValuePair<string, string>[] {
-                    KeyValuePair.Create(nameof(ImgController.Id), p.Id.ToString()),
-                    KeyValuePair.Create(nameof(ImgController.Path), StaticFunction.Base64Encode(DataParse.GetSmallImgUri(p, false))),
-                    KeyValuePair.Create(nameof(ImgController.Path2), StaticFunction.Base64Encode(DataParse.GetSmallImgUri(p, true))),
+                    KeyValuePair.Create(nameof(ImgController.Path), StaticFunction.Base64Encode(json))
                 });
         }
 

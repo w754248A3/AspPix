@@ -2,21 +2,19 @@
     document.addEventListener("DOMContentLoaded", function () {
         let imgDiv = document.getElementById("imgDiv");
         let vs = JSON.parse(imgDiv.getAttribute("my"));
-        function as() {
-        }
-        function addImg(vs) {
+        function addImg(vs, n) {
             if (vs.length !== 0) {
-                let uri = vs.shift();
+                let uri = vs[0] + n + vs[1];
                 let img = document.createElement("img");
                 img.onload = () => {
                     if (img.width !== 0 && img.height !== 0) {
                         imgDiv.appendChild(img);
-                        addImg(vs);
+                        addImg(vs, n + 1);
                     }
                 };
                 img.src = uri;
             }
         }
-        addImg(vs);
+        addImg(vs, 0);
     });
 })();

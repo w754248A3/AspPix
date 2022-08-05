@@ -34,7 +34,7 @@ namespace AspPix
 
                 string html = await loadHtml(id).ConfigureAwait(false);
 
-                await writer.WriteAsync(DataParse.CreatePH(html, id)).ConfigureAwait(false);
+                await writer.WriteAsync(DataParse.CreatePD(html, id)).ConfigureAwait(false);
 
                 await Load(0, nextid, loadHtml, writer).ConfigureAwait(false);
             }

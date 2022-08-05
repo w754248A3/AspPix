@@ -134,14 +134,7 @@ namespace AspPix
             });
         }
 
-        public static PixivHtml CreatePH(string html, int id)
-        {
-            string[] tags = GetTag(html);
-
-            return new PixivHtml { pix = CreatePD(html, id), tag = tags };
-        }
-
-        public static PixivData CreatePD(string html, int id)
+        public static PixivHtml CreatePD(string html, int id)
         {
             int mark = GetMarkCount(html);
 
@@ -151,7 +144,8 @@ namespace AspPix
 
             int isjpg = GetIsJpg(uri);
 
-            return new PixivData
+            string[] tags = GetTag(html);
+            return new PixivHtml
             {
                 Id = id,
 
@@ -159,7 +153,9 @@ namespace AspPix
 
                 Date = dt,
 
-                Flags = isjpg
+                Flags = isjpg,
+
+                Tags = tags
 
             };
         }

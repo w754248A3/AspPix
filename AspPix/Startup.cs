@@ -35,15 +35,16 @@ namespace AspPix
                     return MyHttp.CreateSocketsHttpHandler(info.DNS, info.PORT, info.SNI);
                 });
 
-            services.AddTransient<PixGetHtmlService>();
-            services.AddTransient<PixCrawling>();
-          
             services.AddLinqToDBContext<AppDataConnection>((provider, options) => {
                 options
                 .UseSQLiteMicrosoft(_configuration.GetAspPixInfo().CONNECT_STRING)
                 .UseDefaultLogging(provider);
             });
-          
+
+            services.AddTransient<PixGetHtmlService>();
+            services.AddTransient<PixCrawling>();
+            services.AddTransient<IntoSqlite>();
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

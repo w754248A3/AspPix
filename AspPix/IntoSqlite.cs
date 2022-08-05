@@ -1,5 +1,6 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +9,19 @@ using System.Threading.Channels;
 
 namespace AspPix
 {
-    public static class IntoSqlite
+    public class IntoSqlite
     {
+
+        readonly AppDataConnection _db;
+
+        readonly ILogger _logger;
+
+        public IntoSqlite(AppDataConnection db, ILogger<IntoSqlite> logger)
+        {
+            _db = db;
+            _logger = logger;
+        }
+
         static TempTable<T> CreateTemp<T>(DataConnection db, string name) where T: class
         {
 
@@ -36,7 +48,7 @@ namespace AspPix
            
             using var temp = CreateTemp<PixivData>(db, "A004C88C-0518-4A21-B8CC-6316C8523439");
 
-            temp.BulkCopy(vs.Select(p => p.pix));
+            temp.BulkCopy(vs.Select(p => (PixivData)p));
 
             var query = temp
                 .LeftJoin(db.GetTable<PixivData>(), (a, b) => a.Id == b.Id, (a, b) => new { a, b });
@@ -67,7 +79,7 @@ namespace AspPix
 
             var ie = vs.SelectMany(p =>
             {
-                return p.tag.Select(tag =>
+                return p.Tags.Select(tag =>
                 {
                     if (!dic.TryGetValue(tag, out var tagID))
                     {
@@ -77,7 +89,7 @@ namespace AspPix
 
                     }
 
-                    return new PixivTagMap { ItemId = p.pix.Id, TagId = tagID };
+                    return new PixivTagMap { ItemId = p.Id, TagId = tagID };
 
                 });
             });
@@ -142,7 +154,7 @@ namespace AspPix
             ts.Commit();
         }
 
-        public static void Run(int count, Func<DataConnection> func, ChannelReader<PixivHtml> reader)
+        public void Run(int count,ChannelReader<PixivHtml> reader)
         {
             var vs = new List<PixivHtml>();
 
@@ -155,7 +167,7 @@ namespace AspPix
 
                     if (vs.Count >= count)
                     {
-                        Insert(vs, func());
+                        Insert(vs, _db);
 
                         vs = new List<PixivHtml>();
                     }

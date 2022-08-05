@@ -125,11 +125,9 @@ namespace AspPix
         public int TagId { get; set; }
     }
 
-    public class PixivHtml
+    public class PixivHtml : PixivData
     {
-        public PixivData pix { get; set; }
-
-        public string[] tag { get; set; }
+        public string[] Tags { get; set; }
     }
 
     public class Program
@@ -180,10 +178,10 @@ namespace AspPix
 
             var reader = http.Run();
 
+            var into = host.Services.GetRequiredService<IntoSqlite>();
 
-            IntoSqlite.Run(10, () => host.Services.GetRequiredService<AppDataConnection>(), reader);
 
-
+            into.Run(10, reader);
 
         }
 

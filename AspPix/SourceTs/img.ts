@@ -4,7 +4,7 @@
 
         let imgDiv = <HTMLDivElement>document.getElementById("imgDiv");
 
-        let vs = JSON.parse(imgDiv.getAttribute("my"));
+        let vs = JSON.parse(window.atob(imgDiv.getAttribute("my")));
 
 
         function addImg(vs: string[], n: number) {

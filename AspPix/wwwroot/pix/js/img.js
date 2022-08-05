@@ -1,7 +1,7 @@
 (function () {
     document.addEventListener("DOMContentLoaded", function () {
         let imgDiv = document.getElementById("imgDiv");
-        let vs = JSON.parse(imgDiv.getAttribute("my"));
+        let vs = JSON.parse(window.atob(imgDiv.getAttribute("my")));
         function addImg(vs, n) {
             if (vs.length !== 0) {
                 let uri = vs[0] + n + vs[1];

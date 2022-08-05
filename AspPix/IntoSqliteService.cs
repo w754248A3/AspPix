@@ -177,7 +177,7 @@ namespace AspPix
                         if (vs.Count >= count)
                         {
                             Insert(vs, _db);
-                            Console.WriteLine("insert");
+                           
                             vs = new List<PixivHtml>();
                         }
                         

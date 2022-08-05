@@ -81,8 +81,6 @@ namespace AspPix
 
     public record PixGetHtmlHttp(HttpClient Http);
 
-    public record PixGetHtmlService(PixGetHtmlHttp Http);
-
     public class Program
     {
         [DllImport("kernel32.dll")]
@@ -119,6 +117,7 @@ namespace AspPix
 
 
 
+
             var host = CreateHostBuilder(args).Build();
 
 
@@ -133,7 +132,7 @@ namespace AspPix
 
             var into = host.Services.GetRequiredService<IntoSqliteService>();
 
-            into.Run(10, reader);
+            into.Run(1000, reader);
 
         }
 

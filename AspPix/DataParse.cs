@@ -44,13 +44,22 @@ namespace AspPix
         }
 
 
-        public static string[] GetImgUri(string host, PixivData pd)
+        public static string[] GetImgUriModule(string host, PixivData pd)
         {
             string ex = pd.Flags == 0 ? ".jpg" : ".png";
 
             string path = GetPathFromDateTime(pd.Date);
 
             return new string[] { $"{host}/img-original/img/{path}/{pd.Id}_p", ex };
+        }
+
+        public static string GetImgUri(string host, PixivData pd)
+        {
+            string ex = pd.Flags == 0 ? ".jpg" : ".png";
+
+            string path = GetPathFromDateTime(pd.Date);
+
+            return $"{host}/img-original/img/{path}/{pd.Id}_p0{ex}";
         }
 
         public static string GetSmallImgUri(PixivData pd, bool b)

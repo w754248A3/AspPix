@@ -36,13 +36,6 @@ namespace AspPix.Controllers
             _db = db;
         }
 
-        static Uri CreateBigUri(Uri host, string s)
-        {
-
-            return new Uri(host, s);
-
-        }
-
 
         [HttpGet]
         public async Task<ActionResult> Get([FromQuery] int id)
@@ -56,7 +49,7 @@ namespace AspPix.Controllers
             var item = await _db.GetTable<AspPix.PixivData>().Where(p => p.Id == id).FirstAsync();
 
 
-            var bigUri = CreateBigUri(info.CLOUDFLARE_HOST, "");
+            var bigUri = DataParse.GetImgUri(info.CLOUDFLARE_HOST.AbsoluteUri, item);
 
             var res = await _http.Http.GetAsync(bigUri, HttpCompletionOption.ResponseHeadersRead);
 

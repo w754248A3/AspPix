@@ -40,12 +40,6 @@ namespace AspPix.Pages
         public string IsLive { get; set; }
 
 
-
-        static string CreateBigUri(string host, string s)
-        {
-            return host.TrimEnd('/') + "/" + s.TrimStart('/');
-        }
-
         public async Task OnGetAsync(int id)
         {
             const string HOST = "https://morning-bird-d5a7.sparkling-night-bc75.workers.dev/";
@@ -53,7 +47,7 @@ namespace AspPix.Pages
             var info = _con.GetAspPixInfo();
 
             var item = await _db.PixData.FirstAsync(p => p.Id == id);
-            BigUri = JsonSerializer.Serialize(DataParse.GetImgUri(HOST, item));
+            BigUri = StaticFunction.Base64Encode(JsonSerializer.Serialize(DataParse.GetImgUriModule(HOST, item)));
 
             var tags = await _db.PixTagMap.Where(p => p.ItemId == id).Select(p => p.TagId)
                 .InnerJoin(_db.PixTag, (left, right) => left == right.Id, (left, right) => right.Tag)

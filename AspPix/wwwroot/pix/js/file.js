@@ -8,6 +8,8 @@
         let resetButton = document.getElementById("reset");
         let dateInput = document.getElementById("date");
         let date2Input = document.getElementById("date2");
+        function as() {
+        }
         function tagChange() {
             pageCount.value = (0).toString();
             getForm.submit();

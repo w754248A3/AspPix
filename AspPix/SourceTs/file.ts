@@ -17,6 +17,10 @@
         let date2Input = <HTMLInputElement>document.getElementById("date2");
 
 
+        function as() {
+
+        }
+
         function tagChange() {
 
             pageCount.value = (0).toString();

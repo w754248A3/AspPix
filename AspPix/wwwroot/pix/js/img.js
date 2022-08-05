@@ -2,6 +2,8 @@
     document.addEventListener("DOMContentLoaded", function () {
         let imgDiv = document.getElementById("imgDiv");
         let vs = JSON.parse(imgDiv.getAttribute("my"));
+        function as() {
+        }
         function addImg(vs) {
             if (vs.length !== 0) {
                 let uri = vs.shift();

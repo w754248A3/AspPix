@@ -7,6 +7,10 @@
         let vs = JSON.parse(imgDiv.getAttribute("my"));
 
 
+        function as() {
+
+        }
+
         function addImg(vs: string[]) {
 
             if (vs.length !== 0) {

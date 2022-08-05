@@ -17,7 +17,7 @@ using System.Threading;
 
 namespace AspPix
 {
-    public static class Info
+    public static class AspPixExtensions
     {
 
         public static AspPixInfo GetAspPixInfo(this IConfiguration configuration)
@@ -29,41 +29,6 @@ namespace AspPix
         {
             return service.GetRequiredService<IConfiguration>().GetAspPixInfo();
         }
-
-        //public static IEnumerable<string> CreateTags()
-        //{
-
-        //    var db = Info.DbCreateFunc();
-
-        //    var data = DateTime.Now.AddDays(-7);
-
-        //    var pixiv2 = db.GetTable<PixivData>()
-        //        .Where(p => p.Date > data)
-        //        .OrderByDescending(p => p.Mark).Take(10000);
-
-        //    var hasTag = db.GetTable<PixivTagMap>()
-        //        .InnerJoin(pixiv2, (a, b) => a.ItemId == b.Id, (a, b) => a);
-
-
-
-        //    var tagId = db.GetTable<PixivTag>()
-        //        .InnerJoin(hasTag, (a, b) => a.Id == b.TagId, (a, b) => a)
-        //        .GroupBy(p => p.Id)
-        //        .Select(p => new { Id = p.Key, Count = p.Count() });
-
-
-
-
-        //    var tags = db.GetTable<PixivTag>()
-        //        .InnerJoin(tagId, (a, b) => a.Id == b.Id, (a, b) => new { a.Tag, a.Id, b.Count })
-        //        .OrderByDescending(p => p.Count)
-        //        .Take(150);
-
-
-        //    return tags.ToArray().Select(p => p.Tag).ToArray();
-
-        //}
-
     }
 
 
@@ -79,7 +44,6 @@ namespace AspPix
 
         public ITable<PixImg> PixImg => this.GetTable<PixImg>();
         public ITable<PixivData> PixData => this.GetTable<PixivData>();
-        public ITable<PixivHtml> PixHtml => this.GetTable<PixivHtml>();
         public ITable<PixivTag> PixTag => this.GetTable<PixivTag>();
         public ITable<PixivTagMap> PixTagMap => this.GetTable<PixivTagMap>();
         public ITable<PixLive> PixLive => this.GetTable<PixLive>();
@@ -151,8 +115,6 @@ namespace AspPix
         public int Id { get; set; }
 
         public string Tag { get; set; }
-
-
     }
 
     public class PixivTagMap

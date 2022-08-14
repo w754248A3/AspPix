@@ -84,16 +84,16 @@ namespace AspPix
 
                     }
 
-                    return new PixivTagMap { ItemId = p.Id, TagId = tagID };
+                    return (ItemId: p.Id, TagId: tagID);
 
                 });
-            });
+            }).ToHashSet();
 
 
             void InMap()
             {
                 Into("18A7579E-A10A-4BC2-A698-F61BAEA36F7F", db,
-                    ie.Select((p) => new { p.ItemId, p.TagId }),
+                    ie.Select((p) => new PixivTagMap { ItemId = p.ItemId, TagId= p.TagId }),
                     tempTable =>
                     {
                         var table = db.GetTable<PixivTagMap>();
@@ -103,8 +103,7 @@ namespace AspPix
                             (a, b) => a.ItemId == b.ItemId && a.TagId == b.TagId,
                             (a, b) => new { a, b })
                             .Where(p => p.b == null)
-                            .Select(p => p.a)
-                            .Select(p => new PixivTagMap { ItemId = p.ItemId, TagId = p.TagId });
+                            .Select(p => p.a);
 
 
 

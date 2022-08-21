@@ -22,7 +22,7 @@ namespace AspPix
             _logger = logger;
         }
 
-        static async ValueTask Load(int notFoundCount, Func<int> nextid,
+        async ValueTask Load(int notFoundCount, Func<int> nextid,
             Func<int, Task<string>> loadHtml,
             ChannelWriter<PixivHtml> writer)
         {
@@ -34,12 +34,16 @@ namespace AspPix
 
                 string html = await loadHtml(id).ConfigureAwait(false);
 
+                _logger.LogError($"id:{id} load over");
+
                 await writer.WriteAsync(DataParse.CreatePD(html, id)).ConfigureAwait(false);
 
                 await Load(0, nextid, loadHtml, writer).ConfigureAwait(false);
             }
-            catch(HttpRequestException)
+            catch(HttpRequestException e)
             {
+                _logger.LogError(e, "");
+
                 if (notFoundCount >= 1000)
                 {
                     return;
@@ -75,6 +79,8 @@ namespace AspPix
         
         public ChannelReader<PixivHtml> Run(Uri baseUri, string referer)
         {
+            _logger.LogError("Craling Run");
+
             var loadHtml = MyHttp.CreateLoadHtmlFunc(_http);
 
             var channel = Channel.CreateBounded<PixivHtml>(1000);
@@ -92,6 +98,8 @@ namespace AspPix
                             () => { id = nextId(id); return id; },
                             (n) => loadHtml(new Uri(baseUri, n.ToString()), referer),
                             channel.Writer).ConfigureAwait(false);
+
+                        _logger.LogError("已完成一轮爬取");
                     }
                 }));  
             }

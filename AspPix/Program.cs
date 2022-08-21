@@ -155,7 +155,7 @@ namespace AspPix
                         "myapp-{Date}.txt");
 
                     logging.AddConsole();
-                    logging.AddFile(path, minimumLevel: LogLevel.Warning);
+                    logging.AddFile(path, minimumLevel: LogLevel.Error);
                 });
                 
     }

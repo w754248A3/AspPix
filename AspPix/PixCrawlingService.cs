@@ -63,10 +63,29 @@ namespace AspPix
         static async Task<int> GetMaxId(Func<Uri, string, Task<string>> loadHtml)
         {
 
-            string html = await loadHtml(
-                new Uri("http://www.pixiv.net/ranking.php"),
-                "https://www.google.com/").ConfigureAwait(false);
+            string html = null;
 
+            int n = 0;
+            do
+            {
+                try
+                {
+                    html = await loadHtml(
+                                  new Uri("http://www.pixiv.net/ranking.php"),
+                                  "https://www.google.com/").ConfigureAwait(false);
+
+
+                }
+                catch (Exception e) when  (e is HttpRequestException || e is OperationCanceledException) 
+                {
+                    if (n++ > 10)
+                    {
+                        throw;
+                    }
+                }
+            } while (html is null);
+
+          
 
             //100175386_p0_master1200.jpg
             Regex regex = new(@"/(\d+)_p0");

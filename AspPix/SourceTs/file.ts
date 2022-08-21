@@ -1,84 +1,102 @@
 ﻿(function () {
     document.addEventListener("DOMContentLoaded", function () {
 
-        let upButton = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("up");
-
-        let downButton = <HTMLCollectionOf<HTMLButtonElement>>document.getElementsByClassName("down");
-
         let getForm = <HTMLFormElement>document.getElementById("form");
 
         let pageCount = <HTMLInputElement>document.getElementById("down");
 
-        let tagInput = <HTMLInputElement>document.getElementById("tag");
+        let imgs = <HTMLDivElement>document.getElementById("imgs");
 
-        let resetButton = <HTMLInputElement>document.getElementById("reset");
+        let last = <HTMLDivElement>document.getElementById("last");
 
-        let dateInput = <HTMLInputElement>document.getElementById("date");
-        let date2Input = <HTMLInputElement>document.getElementById("date2");
-
-
-        function as() {
-
+        function getUriPathWithoutQuery() {
+            return window.location.href.split('?')[0];
         }
 
-        function tagChange() {
+        let faterstyle = getForm.parentElement.style;
 
-            pageCount.value = (0).toString();
+        faterstyle.position = "fixed";
+
+
+        faterstyle.left = "0";
+
+        faterstyle.top = "0";
+
+        faterstyle.backgroundColor = "White";
+
+        imgs.style.marginTop = getForm.offsetHeight + "px";
+
+
+        getForm.addEventListener("change", (ev) => {
+
+            if (ev.target !== pageCount) {
+                pageCount.value = "0";
+            }
 
             getForm.submit();
+
+
+        });
+
+
+        let options = {
+            rootMargin: '0px',
+            threshold: 1.0
         }
 
+        let cn = 0;
 
-        resetButton.onclick = function () {
-
-            dateInput.value = "";
-
-            date2Input.value = "";
-        };
-
-        tagInput.onchange = tagChange;
-
-       
-        dateInput.onchange = tagChange;
-
-        date2Input.onchange = tagChange;
+        let observer = new IntersectionObserver((entries, observer) => {
 
 
-        function addButtonEvent<T>(ie: Iterable<T & HTMLButtonElement>, func: () => any) {
+            if (!entries.filter(v => v.target === last)[0]) {
+                return;
+            }
 
-            Array.from(ie, function (v) {
+            pageCount.value = (++cn).toString();
 
-                v.onclick = func;
-            });
-        }
+            let xml = new XMLHttpRequest();
 
-        addButtonEvent(upButton, function () {
+            xml.responseType = "document";
 
-            if (pageCount.value) {
+            xml.addEventListener("loadend", () => {
 
-                let count = Number(pageCount.value);
 
-                if (count > 0) {
+                let doc = <Document>xml.response;
 
-                    pageCount.value = (count - 1).toString();
 
-                   
+                let e = <HTMLDivElement>doc.getElementById("imgs");
+
+                let newimgs = e.getElementsByTagName("a");
+
+                if (newimgs.length === 0) {
+                    observer.disconnect();
+
                 }
-                
-                getForm.submit();
-            }
-        });
+                else {
+                    imgs.append(...newimgs);
+                }
 
 
-        addButtonEvent(downButton, function () {
-            if (pageCount.value) {
+            });
+            let fd = new FormData(getForm);
 
-                let count = Number(pageCount.value);
+            let map = new Map(fd);
 
-                pageCount.value = (count + 1).toString();
+            let uq = new URLSearchParams((<Record<string, string>><any>map));
 
-                getForm.submit();
-            }
-        });
+            xml.open("GET", getUriPathWithoutQuery() + "?" + uq.toString());
+
+
+
+            xml.send();
+
+
+
+
+        }, options);
+
+        observer.observe(last);
+
     });
 })();

@@ -1,46 +1,53 @@
 (function () {
     document.addEventListener("DOMContentLoaded", function () {
-        let upButton = document.getElementsByClassName("up");
-        let downButton = document.getElementsByClassName("down");
         let getForm = document.getElementById("form");
         let pageCount = document.getElementById("down");
-        let tagInput = document.getElementById("tag");
-        let resetButton = document.getElementById("reset");
-        let dateInput = document.getElementById("date");
-        let date2Input = document.getElementById("date2");
-        function as() {
+        let imgs = document.getElementById("imgs");
+        let last = document.getElementById("last");
+        function getUriPathWithoutQuery() {
+            return window.location.href.split('?')[0];
         }
-        function tagChange() {
-            pageCount.value = (0).toString();
+        let faterstyle = getForm.parentElement.style;
+        faterstyle.position = "fixed";
+        faterstyle.left = "0";
+        faterstyle.top = "0";
+        faterstyle.backgroundColor = "White";
+        imgs.style.marginTop = getForm.offsetHeight + "px";
+        getForm.addEventListener("change", (ev) => {
+            if (ev.target !== pageCount) {
+                pageCount.value = "0";
+            }
             getForm.submit();
-        }
-        resetButton.onclick = function () {
-            dateInput.value = "";
-            date2Input.value = "";
+        });
+        let options = {
+            rootMargin: '0px',
+            threshold: 1.0
         };
-        tagInput.onchange = tagChange;
-        dateInput.onchange = tagChange;
-        date2Input.onchange = tagChange;
-        function addButtonEvent(ie, func) {
-            Array.from(ie, function (v) {
-                v.onclick = func;
-            });
-        }
-        addButtonEvent(upButton, function () {
-            if (pageCount.value) {
-                let count = Number(pageCount.value);
-                if (count > 0) {
-                    pageCount.value = (count - 1).toString();
+        let cn = 0;
+        let observer = new IntersectionObserver((entries, observer) => {
+            if (!entries.filter(v => v.target === last)[0]) {
+                return;
+            }
+            pageCount.value = (++cn).toString();
+            let xml = new XMLHttpRequest();
+            xml.responseType = "document";
+            xml.addEventListener("loadend", () => {
+                let doc = xml.response;
+                let e = doc.getElementById("imgs");
+                let newimgs = e.getElementsByTagName("a");
+                if (newimgs.length === 0) {
+                    observer.disconnect();
                 }
-                getForm.submit();
-            }
-        });
-        addButtonEvent(downButton, function () {
-            if (pageCount.value) {
-                let count = Number(pageCount.value);
-                pageCount.value = (count + 1).toString();
-                getForm.submit();
-            }
-        });
+                else {
+                    imgs.append(...newimgs);
+                }
+            });
+            let fd = new FormData(getForm);
+            let map = new Map(fd);
+            let uq = new URLSearchParams(map);
+            xml.open("GET", getUriPathWithoutQuery() + "?" + uq.toString());
+            xml.send();
+        }, options);
+        observer.observe(last);
     });
 })();

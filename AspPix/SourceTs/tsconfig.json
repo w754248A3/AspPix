@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "module": "amd",
+        "outDir": "C:\\Users\\LeiKaiFeng\\source\\repos\\AspPix\\AspPix\\bin\\Release\\net5.0\\win-x64\\wwwroot\\pix\\js"
+    }
+   }
+   

@@ -48,7 +48,12 @@ namespace AspPix
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions {
+                OnPrepareResponse = (v) =>
+                {
+                    v.Context.Response.Headers.Add("Cache-control", "no-store");
+                }
+            });
 
             app.UseRouting();
 

@@ -98,5 +98,10 @@
 
         observer.observe(last);
 
+        function text(){
+            console.log("A");
+        }
+
+        text();
     });
 })();

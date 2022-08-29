@@ -131,6 +131,37 @@
     }
 
 
+    function set图片样式(){
+
+        let sy = document.createElement("style");
+
+        sy.innerHTML = `
+
+            body {
+
+                background-color: black;
+
+            }
+
+            img {
+
+                object-fit: contain;
+
+                height: 200px;
+
+                width: 200px;
+
+
+            }
+
+        `;
+
+
+        document.head.appendChild(sy);
+    }
+
+    set图片样式();
+
     document.addEventListener("DOMContentLoaded", function () {
 
         let getForm = <HTMLFormElement>document.getElementById("form");
@@ -156,21 +187,5 @@
 
 
         });
-
-        let sy = document.createElement("style");
-
-        sy.innerHTML = `
-            img {
-                max-height: 300px;
-
-                max-width: 300px;
-
-            }
-
-        `;
-
-
-        document.head.appendChild(sy);
-
     });
 })();

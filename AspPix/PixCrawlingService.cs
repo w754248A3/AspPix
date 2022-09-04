@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
@@ -22,40 +23,52 @@ namespace AspPix
             _logger = logger;
         }
 
-        async ValueTask Load(int notFoundCount, Func<int> nextid,
+        async Task Load(IEnumerable<int> nextId,
             Func<int, Task<string>> loadHtml,
             ChannelWriter<PixivHtml> writer)
         {
-            try
+            int notFoundCount = 0;
+            foreach (var id in nextId)
             {
-                await Task.Yield();
-
-                int id = nextid();
-
-                string html = await loadHtml(id).ConfigureAwait(false);
-
-                _logger.LogError($"id:{id} load over");
-
-                await writer.WriteAsync(DataParse.CreatePD(html, id)).ConfigureAwait(false);
-
-                await Load(0, nextid, loadHtml, writer).ConfigureAwait(false);
-            }
-            catch(HttpRequestException e)
-            {
-                _logger.LogError(e, "");
-
-                if (notFoundCount >= 1000)
+                string html = null;
+                while (true)
                 {
-                    return;
+                   
+                    try
+                    {
+                        html = await loadHtml(id).ConfigureAwait(false);
+
+                        notFoundCount = 0;
+
+                        break;
+                    }
+                    catch (HttpRequestException e)
+                    when (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        notFoundCount++;
+                        if (notFoundCount >= 1000)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception e)
+                    when (e is HttpRequestException || e is OperationCanceledException)
+                    {
+                        await Task.Delay(new TimeSpan(0, 0, 3)).ConfigureAwait(false);
+                    }            
                 }
-                else
+
+                if(html is not null)
                 {
-                    await Load(notFoundCount + 1, nextid, loadHtml, writer).ConfigureAwait(false);
+                    _logger.LogError($"id:{id} load over");
+
+                    await writer.WriteAsync(DataParse.CreatePD(html, id)).ConfigureAwait(false);
                 }
-            }  
-            catch (OperationCanceledException)
-            {
-                await Load(0, nextid, loadHtml, writer).ConfigureAwait(false);
+                
             }
         }
 
@@ -98,6 +111,17 @@ namespace AspPix
         
         public ChannelReader<PixivHtml> Run(Uri baseUri, string referer)
         {
+            static IEnumerable<int> CreateNextId(int start, Func<int ,int> next)
+            {
+                while (true)
+                {
+                    yield return start;
+
+                    start = next(start);
+                }
+            }
+
+
             _logger.LogError("Craling Run");
 
             var loadHtml = MyHttp.CreateLoadHtmlFunc(_http);
@@ -113,8 +137,7 @@ namespace AspPix
                         var id = await GetMaxId(loadHtml).ConfigureAwait(false);
                       
                         await Load(
-                            0,
-                            () => { id = nextId(id); return id; },
+                            CreateNextId(id, nextId),
                             (n) => loadHtml(new Uri(baseUri, n.ToString()), referer),
                             channel.Writer).ConfigureAwait(false);
 

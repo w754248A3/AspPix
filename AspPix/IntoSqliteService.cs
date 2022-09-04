@@ -45,8 +45,25 @@ namespace AspPix
         static void InsertData(List<PixivHtml> vs, DataConnection db)
         {
 
+            IEnumerable<PixivData> Select重复()
+            {
+                var set = new HashSet<int>();
+
+                foreach (var item in vs)
+                {
+                    if (!set.Contains(item.Id))
+                    {
+                        set.Add(item.Id);
+
+                        yield return item;
+                    }
+                }
+
+                
+            }
+
             Into("A004C88C-0518-4A21-B8CC-6316C8523439", db,
-                vs.Select(p => (PixivData)p),
+                Select重复(),
                 tempTable =>
                 {
                     var table = db.GetTable<PixivData>();

@@ -87,18 +87,23 @@ namespace AspPix
       
         static void InsertTag(List<PixivHtml> vs, DataConnection db)
         {
-            var dic = new Dictionary<string, int>();
+            var dic = new Dictionary<int, string>();
 
             var ie = vs.SelectMany(p =>
             {
                 return p.Tags.Select(tag =>
                 {
-                    if (!dic.TryGetValue(tag, out var tagID))
+                    var tagID = StaticFunction.GetTagHash(tag);
+                    if (dic.TryGetValue(tagID, out var tag_2))
                     {
-                        tagID = StaticFunction.GetTagHash(tag);
 
-                        dic[tag] = tagID;
 
+                        dic[tagID] = $"{tag} + {tag_2}";
+
+                    }
+                    else
+                    {
+                        dic[tagID] = tag;
                     }
 
                     return (ItemId: p.Id, TagId: tagID);
@@ -137,7 +142,7 @@ namespace AspPix
             void InTag()
             {
                 Into("FB5D3796-6420-418D-AF5A-E77972D4F16D", db,
-                    dic.Select(p => new PixivTag { Id = p.Value, Tag = p.Key }),
+                    dic.Select(p => new PixivTag { Id = p.Key, Tag = p.Value }),
                     tempTable =>
                     {
 

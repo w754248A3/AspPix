@@ -63,7 +63,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    _db.InsertOrReplace(new PixImg { Id = args.Id, Img = by });
+                    InsertImgService.Writer.TryWrite(new PixImg { Id = args.Id, Img = by });
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

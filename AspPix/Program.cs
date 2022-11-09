@@ -14,6 +14,7 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace AspPix
 {
@@ -81,6 +82,90 @@ namespace AspPix
 
     public record PixGetHtmlHttp(HttpClient Http);
 
+    public class InsertImgService
+    {
+        readonly AppDataConnection _db;
+
+        readonly ILogger _logger;
+
+        public InsertImgService(AppDataConnection db, ILogger<IntoSqliteService> logger)
+        {
+            _db = db;
+            _logger = logger;
+        }
+
+
+        void Inser(System.Threading.Channels.ChannelReader<PixImg> reader)
+        {
+
+            var vs = new List<PixImg>();
+            while (true)
+            {
+                if (reader.TryRead(out var pixImg))
+                {
+                   
+                    vs.Add(pixImg);
+
+                    if (vs.Count >= 10)
+                    {
+                        
+
+                        using var tc = _db.BeginTransaction();
+
+                        Array.ForEach(vs.ToArray(), (p) => _db.InsertOrReplace(p));
+
+                        tc.Commit();
+
+                        return;
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(new TimeSpan(0, 0, 3));
+                }
+
+               
+            }
+
+
+            
+        }
+
+        public static System.Threading.Channels.ChannelWriter<PixImg> Writer { get; private set; }
+
+        public static void Init(IHost host)
+        {
+
+
+
+            var inserImg = host.Services.GetRequiredService<InsertImgService>();
+
+            var chann = System.Threading.Channels.Channel.CreateBounded<PixImg>(100);
+            var read = chann.Reader;
+
+            Writer = chann.Writer;
+
+            var th = new Thread(() => inserImg.Run(read));
+
+            th.Start();
+
+        }
+
+        public void Run(System.Threading.Channels.ChannelReader<PixImg> reader)
+        {
+            LogExit.OnErrorExit(nameof(InsertImgService), _logger, () =>
+            {
+                
+                while (true)
+                {
+                    Inser(reader);
+                    _logger.LogError("insetimgrunone");
+                }
+
+            });
+        }
+    }
+
     public class Program
     {
         [DllImport("kernel32.dll")]
@@ -104,7 +189,8 @@ namespace AspPix
 
         public static void Main(string[] args)
         {
-            
+            //Xcopy /y /E $(ProjectDir)wwwroot $(OutDir)wwwroot
+
             args = new string[] { "--urls=http://127.0.0.1:80/" };
 
 
@@ -131,6 +217,8 @@ namespace AspPix
             var reader = http.Run(info.BASEURI, info.REFERER.AbsoluteUri);
 
             var into = host.Services.GetRequiredService<IntoSqliteService>();
+
+            InsertImgService.Init(host);
 
             FreeConsole();
 

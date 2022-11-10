@@ -160,7 +160,7 @@ namespace AspPix
             var into = host.Services.GetRequiredService<IntoSqliteService>();
 
           
-            //FreeConsole();
+            FreeConsole();
 
             into.Run(1000, reader, InsertImgService.Init());
 

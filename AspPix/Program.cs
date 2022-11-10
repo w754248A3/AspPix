@@ -84,86 +84,27 @@ namespace AspPix
 
     public class InsertImgService
     {
-        readonly AppDataConnection _db;
+        
 
-        readonly ILogger _logger;
+        static System.Threading.Channels.ChannelWriter<PixImg> Writer { get; set; }
 
-        public InsertImgService(AppDataConnection db, ILogger<IntoSqliteService> logger)
+        public static System.Threading.Channels.ChannelReader<PixImg> Init()
         {
-            _db = db;
-            _logger = logger;
-        }
-
-
-        void Inser(System.Threading.Channels.ChannelReader<PixImg> reader)
-        {
-
-            var vs = new List<PixImg>();
-            while (true)
-            {
-                if (reader.TryRead(out var pixImg))
-                {
-                   
-                    vs.Add(pixImg);
-
-                    if (vs.Count >= 10)
-                    {
-                        
-
-                        using var tc = _db.BeginTransaction();
-
-                        Array.ForEach(vs.ToArray(), (p) => _db.InsertOrReplace(p));
-
-                        tc.Commit();
-
-                        return;
-                    }
-                }
-                else
-                {
-                    Thread.Sleep(new TimeSpan(0, 0, 3));
-                }
-
-               
-            }
-
-
-            
-        }
-
-        public static System.Threading.Channels.ChannelWriter<PixImg> Writer { get; private set; }
-
-        public static void Init(IHost host)
-        {
-
-
-
-            var inserImg = host.Services.GetRequiredService<InsertImgService>();
 
             var chann = System.Threading.Channels.Channel.CreateBounded<PixImg>(100);
-            var read = chann.Reader;
-
             Writer = chann.Writer;
 
-            var th = new Thread(() => inserImg.Run(read));
 
-            th.Start();
-
+            return chann.Reader;
         }
 
-        public void Run(System.Threading.Channels.ChannelReader<PixImg> reader)
+
+        public void Post(PixImg pixImg)
         {
-            LogExit.OnErrorExit(nameof(InsertImgService), _logger, () =>
-            {
-                
-                while (true)
-                {
-                    Inser(reader);
-                    _logger.LogError("insetimgrunone");
-                }
-
-            });
+            
+            Writer.TryWrite(pixImg);
         }
+
     }
 
     public class Program
@@ -218,11 +159,10 @@ namespace AspPix
 
             var into = host.Services.GetRequiredService<IntoSqliteService>();
 
-            InsertImgService.Init(host);
+          
+            //FreeConsole();
 
-            FreeConsole();
-
-            into.Run(1000, reader);
+            into.Run(1000, reader, InsertImgService.Init());
 
         }
 

@@ -43,7 +43,7 @@ namespace AspPix
 
             services.AddTransient<PixCrawlingService>();
             services.AddTransient<IntoSqliteService>();
-            services.AddTransient<InsertImgService>();
+            services.AddScoped<InsertImgService>();
 
         }
 

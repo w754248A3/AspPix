@@ -184,30 +184,74 @@ namespace AspPix
             ts.Commit();
         }
 
-        public void Run(int count, ChannelReader<PixivHtml> reader)
+        public void Run(int count, ChannelReader<PixivHtml> reader_data, ChannelReader<PixImg> reader_img)
         {
-            LogExit.OnErrorExit(nameof(IntoSqliteService), _logger, () =>
+            var data_vs = new List<PixivHtml>();
+
+            bool InsertData()
             {
-                var vs = new List<PixivHtml>();
-
-                while (true)
+                if (reader_data.TryRead(out var v))
                 {
-                    if (reader.TryRead(out var v))
-                    {
-                        vs.Add(v);
+                    data_vs.Add(v);
 
-                        if (vs.Count >= count)
-                        {
-                            Insert(vs, _db);
-                           
-                            vs = new List<PixivHtml>();
-                        }
+                    if (data_vs.Count >= count)
+                    {
+                        Insert(data_vs, _db);
+
+                        data_vs = new List<PixivHtml>();
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+
+            var img_vs = new List<PixImg>();
+
+            bool InsertImg()
+            {
+                if (reader_img.TryRead(out var pixImg))
+                {
+
+                    img_vs.Add(pixImg);
+
+                    if (img_vs.Count >= 10)
+                    {
+
+
+                        using var tc = _db.BeginTransaction();
+
+                        Array.ForEach(img_vs.ToArray(), (p) => _db.InsertOrReplace(p));
+
+                        tc.Commit();
+
+                        img_vs = new List<PixImg>();
                         
                     }
-                    else
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                
+            }
+
+            LogExit.OnErrorExit(nameof(IntoSqliteService), _logger, () =>
+            {
+                
+                while (true)
+                {
+                    if(InsertImg() ==false && InsertData() == false)
                     {
                         Thread.Sleep(new TimeSpan(0, 0, 5));
                     }
+                  
                 }
 
 

@@ -26,11 +26,14 @@ namespace AspPix.Controllers
 
         readonly AppDataConnection _db;
 
-        public ImgController(PixImgGetHttp http, IConfiguration con, AppDataConnection db)
+        readonly InsertImgService _imgWrite;
+
+        public ImgController(PixImgGetHttp http, IConfiguration con, AppDataConnection db, InsertImgService imgWrite)
         {
             _http = http;
             _con = con;
             _db = db;
+            _imgWrite = imgWrite;
         }
 
 
@@ -63,7 +66,7 @@ namespace AspPix.Controllers
                 {
                     var by = await res.Content.ReadAsByteArrayAsync();
 
-                    InsertImgService.Writer.TryWrite(new PixImg { Id = args.Id, Img = by });
+                    _imgWrite.Post(new PixImg { Id = args.Id, Img = by });
 
                     return new FileContentResult(by, MediaTypeNames.Image.Jpeg);
                 }

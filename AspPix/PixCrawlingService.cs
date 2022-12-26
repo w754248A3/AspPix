@@ -64,9 +64,21 @@ namespace AspPix
 
                 if(html is not null)
                 {
-                    _logger.LogError($"id:{id} load over");
+                    
+                    try
+                    {
+                        _logger.LogError($"id:{id} load over");
 
-                    await writer.WriteAsync(DataParse.CreatePD(html, id)).ConfigureAwait(false);
+                        var data = DataParse.CreatePD(html, id);
+                        
+                        await writer.WriteAsync(data).ConfigureAwait(false);
+                    }
+                    catch (UriFormatException)
+                    {
+
+                    }
+
+                    
                 }
                 
             }

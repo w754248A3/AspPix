@@ -15,6 +15,9 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Collections.Generic;
+using Microsoft.Win32.TaskScheduler;
+using System.Linq;
+using System.CommandLine;
 
 namespace AspPix
 {
@@ -126,13 +129,170 @@ namespace AspPix
 
         }
 
-      
 
-        public static void Main(string[] args)
+        public static class Cla任务计划程序帮助类
+        {
+
+            public static string GetAppPath()
+            {
+
+                string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+
+                string appNameWithExe = appName + ".exe";
+
+                return Path.Combine(basePath, appNameWithExe);
+
+            }
+
+            public static void Remove任务计划程序(string taskName)
+            {
+                var ts = TaskService.Instance.RootFolder.GetTasks().Where(p => p.Name == taskName);
+
+
+                foreach (var item in ts)
+                {
+                    item.Stop();
+                }
+
+                TaskService.Instance.RootFolder.DeleteTask(taskName, false);
+
+
+
+
+            }
+            public static void Start任务计划程序(string taskName, string args)
+            {
+                var ts = TaskService.Instance.RootFolder.GetTasks().Where(p => p.Name == taskName);
+
+
+                foreach (var item in ts)
+                {
+                    item.Run(args);
+                }
+            }
+            public static void Stop任务计划程序(string taskName)
+            {
+                var ts = TaskService.Instance.RootFolder.GetTasks().Where(p => p.Name == taskName);
+
+
+                foreach (var item in ts)
+                {
+                    item.Stop();
+                }
+            }
+            
+            public static void Register任务计划程序并立即运行(string appPath, string args, string taskName, string v任务表述)
+            {
+                var td = TaskService.Instance.NewTask();
+
+
+                td.RegistrationInfo.Description = v任务表述;
+
+                td.Triggers.AddNew(TaskTriggerType.Logon);
+
+                td.Principal.RunLevel = TaskRunLevel.LUA;
+
+                td.Settings.DisallowStartIfOnBatteries = false;
+
+                td.Settings.ExecutionTimeLimit = TimeSpan.Zero;
+
+                td.Settings.MultipleInstances = TaskInstancesPolicy.StopExisting;
+
+                td.Settings.StopIfGoingOnBatteries = false;
+
+                td.Settings.RunOnlyIfIdle = false;
+
+                td.Settings.IdleSettings.StopOnIdleEnd = false;
+
+                td.Actions.Add(appPath, args);
+
+                TaskService.Instance.RootFolder.RegisterTaskDefinition(taskName, td).Run(args);
+
+
+            }
+
+        }
+
+        public enum CommandLineFlags
+        {
+            OnlyRun,
+            Install,
+            RunAndFree,
+            Uninstall,
+            Stop,
+            Start
+        }
+
+        public static int Main(string[] args)
+        {
+
+            var option = new System.CommandLine.Option<CommandLineFlags>(
+            name: "--args",
+            description: "执行选项");
+
+            var rootCommand = new RootCommand("AspPix");
+            rootCommand.AddOption(option);
+
+
+
+            rootCommand.SetHandler((flags) =>
+            {
+                const string TASKNAME = "AspPix_2be61d52-3276-4279-9a15-1879e65b73d2";
+                const string START_ARGS = "--args RunAndFree";
+                if (flags == CommandLineFlags.Install)
+                {
+
+                    Cla任务计划程序帮助类.Register任务计划程序并立即运行(
+                        Cla任务计划程序帮助类.GetAppPath(),
+                        START_ARGS,
+                        TASKNAME,
+                        "AspPix");
+
+
+                }
+                else if (flags == CommandLineFlags.OnlyRun)
+                {
+
+                    F启动(false);
+
+                }
+                else if (flags == CommandLineFlags.RunAndFree)
+                {
+
+
+                    F启动(true);
+
+                }
+                else if (flags == CommandLineFlags.Uninstall)
+                {
+
+                    Cla任务计划程序帮助类.Remove任务计划程序(TASKNAME);
+                }
+                else if (flags == CommandLineFlags.Stop)
+                {
+
+                    Cla任务计划程序帮助类.Stop任务计划程序(TASKNAME);
+                }
+                else if (flags == CommandLineFlags.Start)
+                {
+
+                    Cla任务计划程序帮助类.Start任务计划程序(TASKNAME, START_ARGS);
+                }
+            },
+            option);
+
+            return rootCommand.Invoke(args);
+        }
+
+
+
+        static void F启动(bool isFreeConsole)
         {
             //Xcopy /y /E $(ProjectDir)wwwroot $(OutDir)wwwroot
 
-            args = new string[] { "--urls=http://127.0.0.1:80/" };
+            var args = new string[] { "--urls=http://127.0.0.1:80/" };
 
 
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -159,8 +319,9 @@ namespace AspPix
 
             var into = host.Services.GetRequiredService<IntoSqliteService>();
 
-          
-            FreeConsole();
+            if(isFreeConsole){
+                FreeConsole();
+            }
 
             into.Run(1000, reader, InsertImgService.Init());
 

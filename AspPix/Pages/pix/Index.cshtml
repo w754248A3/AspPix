@@ -13,7 +13,9 @@
         <form id="form" method="get">
             <label>仅喜欢</label>
             <input type="checkbox" name="@nameof(Model.OnlyLive)" checked="@Model.OnlyLive" />
-            <input type="text" id="tag" name="@nameof(Model.Tag)" value="@Model.Tag" />
+            <input type="text" id="tag" name="@nameof(Model.Tag)" value="@Model.Tag" list="exampleList"/>
+            <datalist id="exampleList">
+            </datalist>
             <input type="date" id="date" name="@nameof(Model.DateLeft)" value="@Model.DateLeft" />
             <input type="date" id="date2" name="@nameof(Model.DateRight)" value="@Model.DateRight" />
             <input type="number" id="down" name="@nameof(Model.Pages)" value="@Model.Pages" />

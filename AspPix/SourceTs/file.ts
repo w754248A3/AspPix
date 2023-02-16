@@ -162,6 +162,7 @@
 
     set图片样式();
 
+
     document.addEventListener("DOMContentLoaded", function () {
 
         let getForm = <HTMLFormElement>document.getElementById("form");
@@ -170,8 +171,42 @@
 
         let imgs = <HTMLDivElement>document.getElementById("imgs");
 
-        let last = <HTMLDivElement>document.getElementById("last");
+        let list = <HTMLDataListElement>document.getElementById("exampleList");
 
+
+        let tag = <HTMLInputElement>document.getElementById("tag");
+
+        tag.addEventListener("input",()=>{
+
+            
+            fetch("/pix/api/tag?name="+tag.value, {
+                method:"GET"
+            })
+            .then((res)=>{
+                res.json().then((vs)=>{
+                    
+                    list.innerHTML="";
+
+                    for (const iterator of vs) {
+                        
+                        let op = document.createElement("option");
+
+                        op.value=iterator;
+
+                        list.appendChild(op);
+
+                    }
+
+
+                },(err)=>{
+                    console.log(err,"json");
+                })
+            },(err)=>{
+                console.log(err,"res");
+            })
+
+
+        });
         set输入部分的HTML为固定布局(getForm, imgs);
 
         run增量加载图片(imgs, getForm, pageCount);

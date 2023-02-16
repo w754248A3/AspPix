@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "es2021",
         "module": "amd",
-        "outDir": "../wwwroot/pix/js/"
+        "outDir": "C:/Users/PC/code/AspPix/AspPix/bin/Release/net7.0/win-x64/wwwroot/pix/js"
     }
    }
    
